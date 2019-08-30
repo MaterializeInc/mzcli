@@ -100,12 +100,15 @@ def register_json_typecasters(conn, loads_fn):
     """
     available = set()
 
+    print('novail')
     for name in ["json", "jsonb"]:
         try:
             psycopg2.extras.register_json(conn, loads=loads_fn, name=name)
             available.add(name)
         except psycopg2.ProgrammingError:
             pass
+
+    print('avail?')
 
     return available
 
@@ -117,15 +120,16 @@ def register_hstore_typecaster(conn):
     database and register a type caster that converts it to unicode.
     http://initd.org/psycopg/docs/extras.html#psycopg2.extras.register_hstore
     """
-    with conn.cursor() as cur:
-        try:
-            cur.execute(
-                "select t.oid FROM pg_type t WHERE t.typname = 'hstore' and t.typisdefined"
-            )
-            oid = cur.fetchone()[0]
-            ext.register_type(ext.new_type((oid,), "HSTORE", ext.UNICODE))
-        except Exception:
-            pass
+    return None
+    # with conn.cursor() as cur:
+    #     try:
+    #         cur.execute(
+    #             "select t.oid FROM pg_type t WHERE t.typname = 'hstore' and t.typisdefined"
+    #         )
+    #         oid = cur.fetchone()[0]
+    #         ext.register_type(ext.new_type((oid,), "HSTORE", ext.UNICODE))
+    #     except Exception:
+    #         pass
 
 
 class PGExecute(object):
@@ -213,6 +217,7 @@ class PGExecute(object):
         self.server_version = None
         self.extra_args = None
         self.connect(database, user, password, host, port, dsn, **kwargs)
+        print(f"connectorino db={database!r}")
         self.reset_expanded = None
 
     def copy(self):
@@ -268,6 +273,7 @@ class PGExecute(object):
         conn = psycopg2.connect(**conn_params)
         cursor = conn.cursor()
         conn.set_client_encoding("utf8")
+        print(f"conn={conn}")
 
         self._conn_params = conn_params
         if self.conn:
@@ -280,6 +286,7 @@ class PGExecute(object):
         # Note: moved this after setting autocommit because of #664.
         # TODO: use actual connection info from psycopg2.extensions.Connection.info as psycopg>2.8 is available and required dependency  # noqa
         dsn_parameters = conn.get_dsn_parameters()
+        print(f"dsn_params={dsn_parameters}")
 
         self.dbname = dsn_parameters.get("dbname")
         self.user = dsn_parameters.get("user")
@@ -293,16 +300,23 @@ class PGExecute(object):
 
         cursor.execute("SHOW ALL")
         db_parameters = dict(name_val_desc[:2] for name_val_desc in cursor.fetchall())
+        print(f"db_parameters={db_parameters}")
 
-        pid = self._select_one(cursor, "select pg_backend_pid()")[0]
-        self.pid = pid
+        #pid = self._select_one(cursor, "select pg_backend_pid()")[0]
+        #self.pid = pid
+        self.pid = 1
         self.superuser = db_parameters.get("is_superuser") == "1"
 
-        self.server_version = self.get_server_version(cursor)
+        #self.server_version = self.get_server_version(cursor)
+        self.servier_version = "1"
 
+        print(f"datety")
         register_date_typecasters(conn)
-        register_json_typecasters(self.conn, self._json_typecaster)
+        print(f"jsonty")
+        #register_json_typecasters(self.conn, self._json_typecaster)
+        print("registering tcast")
         register_hstore_typecaster(self.conn)
+        print(f"conn: {self.conn}")
 
     @property
     def short_host(self):
@@ -444,16 +458,19 @@ class PGExecute(object):
         """Returns tuple (title, rows, headers, status)"""
         _logger.debug("Regular sql statement. sql: %r", split_sql)
         cur = self.conn.cursor()
+        print(f"{cur} execution {split_sql}")
         cur.execute(split_sql)
-
+        print("executed")
         # conn.notices persist between queies, we use pop to clear out the list
         title = ""
         while len(self.conn.notices) > 0:
             title = utf8tounicode(self.conn.notices.pop()) + title
+        _logger.debug("cleared title %s", title)
 
         # cur.description will be None for operations that do not return
         # rows.
         if cur.description:
+            _logger.debug("got a current description")
             headers = [x[0] for x in cur.description]
             return title, cur, headers, cur.statusmessage
         else:
@@ -553,53 +570,8 @@ class PGExecute(object):
                 'm' - materialized view
         :return: list of (schema_name, relation_name, column_name, column_type) tuples
         """
-
-        if self.conn.server_version >= 80400:
-            columns_query = """
-                SELECT  nsp.nspname schema_name,
-                        cls.relname table_name,
-                        att.attname column_name,
-                        att.atttypid::regtype::text type_name,
-                        att.atthasdef AS has_default,
-                        pg_catalog.pg_get_expr(def.adbin, def.adrelid, true) as default
-                FROM    pg_catalog.pg_attribute att
-                        INNER JOIN pg_catalog.pg_class cls
-                            ON att.attrelid = cls.oid
-                        INNER JOIN pg_catalog.pg_namespace nsp
-                            ON cls.relnamespace = nsp.oid
-                        LEFT OUTER JOIN pg_attrdef def
-                            ON def.adrelid = att.attrelid
-                            AND def.adnum = att.attnum
-                WHERE   cls.relkind = ANY(%s)
-                        AND NOT att.attisdropped
-                        AND att.attnum  > 0
-                ORDER BY 1, 2, att.attnum"""
-        else:
-            columns_query = """
-                SELECT  nsp.nspname schema_name,
-                        cls.relname table_name,
-                        att.attname column_name,
-                        typ.typname type_name,
-                        NULL AS has_default,
-                        NULL AS default
-                FROM    pg_catalog.pg_attribute att
-                        INNER JOIN pg_catalog.pg_class cls
-                            ON att.attrelid = cls.oid
-                        INNER JOIN pg_catalog.pg_namespace nsp
-                            ON cls.relnamespace = nsp.oid
-                        INNER JOIN pg_catalog.pg_type typ
-                            ON typ.oid = att.atttypid
-                WHERE   cls.relkind = ANY(%s)
-                        AND NOT att.attisdropped
-                        AND att.attnum  > 0
-                ORDER BY 1, 2, att.attnum"""
-
-        with self.conn.cursor() as cur:
-            sql = cur.mogrify(columns_query, [kinds])
-            _logger.debug("Columns Query. sql: %r", sql)
-            cur.execute(sql)
-            for row in cur:
-                yield row
+        print("fetching columns")
+        return []
 
     def table_columns(self):
         for row in self._columns(kinds=["r"]):
@@ -763,94 +735,8 @@ class PGExecute(object):
 
     def datatypes(self):
         """Yields tuples of (schema_name, type_name)"""
-
-        with self.conn.cursor() as cur:
-            if self.conn.server_version > 90000:
-                query = """
-                    SELECT n.nspname schema_name,
-                           t.typname type_name
-                    FROM   pg_catalog.pg_type t
-                           INNER JOIN pg_catalog.pg_namespace n
-                              ON n.oid = t.typnamespace
-                    WHERE ( t.typrelid = 0  -- non-composite types
-                            OR (  -- composite type, but not a table
-                                  SELECT c.relkind = 'c'
-                                  FROM pg_catalog.pg_class c
-                                  WHERE c.oid = t.typrelid
-                                )
-                          )
-                          AND NOT EXISTS( -- ignore array types
-                                SELECT  1
-                                FROM    pg_catalog.pg_type el
-                                WHERE   el.oid = t.typelem AND el.typarray = t.oid
-                              )
-                          AND n.nspname <> 'pg_catalog'
-                          AND n.nspname <> 'information_schema'
-                    ORDER BY 1, 2;
-                    """
-            else:
-                query = """
-                    SELECT n.nspname schema_name,
-                      pg_catalog.format_type(t.oid, NULL) type_name
-                    FROM pg_catalog.pg_type t
-                         LEFT JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-                    WHERE (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-                      AND t.typname !~ '^_'
-                          AND n.nspname <> 'pg_catalog'
-                          AND n.nspname <> 'information_schema'
-                      AND pg_catalog.pg_type_is_visible(t.oid)
-                    ORDER BY 1, 2;
-                """
-            _logger.debug("Datatypes Query. sql: %r", query)
-            cur.execute(query)
-            for row in cur:
-                yield row
+        return []
 
     def casing(self):
         """Yields the most common casing for names used in db functions"""
-        with self.conn.cursor() as cur:
-            query = r"""
-          WITH Words AS (
-                SELECT regexp_split_to_table(prosrc, '\W+') AS Word, COUNT(1)
-                FROM pg_catalog.pg_proc P
-                JOIN pg_catalog.pg_namespace N ON N.oid = P.pronamespace
-                JOIN pg_catalog.pg_language L ON L.oid = P.prolang
-                WHERE L.lanname IN ('sql', 'plpgsql')
-                AND N.nspname NOT IN ('pg_catalog', 'information_schema')
-                GROUP BY Word
-            ),
-            OrderWords AS (
-                SELECT Word,
-                    ROW_NUMBER() OVER(PARTITION BY LOWER(Word) ORDER BY Count DESC)
-                FROM Words
-                WHERE Word ~* '.*[a-z].*'
-            ),
-            Names AS (
-                --Column names
-                SELECT attname AS Name
-                FROM pg_catalog.pg_attribute
-                UNION -- Table/view names
-                SELECT relname
-                FROM pg_catalog.pg_class
-                UNION -- Function names
-                SELECT proname
-                FROM pg_catalog.pg_proc
-                UNION -- Type names
-                SELECT typname
-                FROM pg_catalog.pg_type
-                UNION -- Schema names
-                SELECT nspname
-                FROM pg_catalog.pg_namespace
-                UNION -- Parameter names
-                SELECT unnest(proargnames)
-                FROM pg_proc
-            )
-            SELECT Word
-            FROM OrderWords
-            WHERE LOWER(Word) IN (SELECT Name FROM Names)
-            AND Row_Number = 1;
-            """
-            _logger.debug("Casing Query. sql: %r", query)
-            cur.execute(query)
-            for row in cur:
-                yield row[0]
+        return []

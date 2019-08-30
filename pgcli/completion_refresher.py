@@ -62,7 +62,11 @@ class CompletionRefresher(object):
 
         while 1:
             for refresher in self.refreshers.values():
-                refresher(completer, executor)
+                try:
+                    refresher(completer, executor)
+                except Exception as e:
+                    print(f"db error: {e}")
+                    return
                 if self._restart_refresh.is_set():
                     self._restart_refresh.clear()
                     break
