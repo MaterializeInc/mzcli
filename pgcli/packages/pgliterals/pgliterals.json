@@ -206,6 +206,7 @@
         "OUTER": [],
         "OWNER": [],
         "PCTFREE": [],
+        "PEEK": [],
         "PRIMARY": [],
         "PRIOR": [],
         "PRIVILEGES": [],
@@ -229,7 +230,12 @@
         "SESSION": [],
         "SET": [],
         "SHARE": [],
-        "SHOW": [],
+        "SHOW": [
+          "COLUMNS",
+          "SOURCES",
+          "VIEWS",
+          "TABLES"
+        ],
         "SIZE": [],
         "SMALLINT": [],
         "START": [],
