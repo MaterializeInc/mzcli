@@ -1,5 +1,5 @@
-A REPL for Postgres
--------------------
+A REPL for the Materialize Streaming View Engine
+------------------------------------------------
 
 |Build Status| |CodeCov| |PyPI| |Landscape| |Gitter|
 
