@@ -15,6 +15,8 @@ You should use pipx to installs scripts, which can installed like:
     python3 -m pip install --user pipx
     python3 -m pipx ensurepath
     
+You also need an installed postgres.
+
 Then we have to download the mzcli package by visiting a url because it is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
 
 Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz.zip``)::
