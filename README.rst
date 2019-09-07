@@ -3,7 +3,27 @@ A REPL for Postgres
 
 |Build Status| |CodeCov| |PyPI| |Landscape| |Gitter|
 
-This is a postgres client that does auto-completion and syntax highlighting.
+Quick Start
+-----------
+
+Recommended current install instructions:
+
+You should use pipx to installs scripts, which can installed like:
+
+::
+
+    python3 -m pip install --user pipx
+    python3 -m pipx ensurepath
+    
+Then we have to download the mzcli package by visiting a url because it is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
+
+Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz.zip``)::
+
+    LDFLAGS="-L/usr/local/opt/openssl/lib" CPPFLAGS="-I/usr/local/opt/openssl/include" \
+        pipx install --spec ~/Downloads/mzcli-mtrlz.zip mzcli
+
+
+This is a (wip) materialize client that does auto-completion and syntax highlighting.
 
 Home Page: http://pgcli.com
 
@@ -12,27 +32,6 @@ MySQL Equivalent: http://mycli.net
 .. image:: screenshots/pgcli.gif
 .. image:: screenshots/image01.png
 
-Quick Start
------------
-
-If you already know how to install python packages, then you can simply do:
-
-::
-
-    $ pip install -U pgcli
-
-    or
-
-    $ sudo apt-get install pgcli # Only on Debian based Linux (e.g. Ubuntu, Mint, etc)
-    $ brew install pgcli  # Only on macOS
-
-If you don't know how to install python packages, please check the
-`detailed instructions`_.
-
-If you are restricted to using psycopg2 2.7.x then pip will try to install it from a binary. There are some known issues with the psycopg2 2.7 binary - see the `psycopg docs`_ for more information about this and how to force installation from source. psycopg2 2.8 has fixed these problems, and will build from source.
-
-.. _`detailed instructions`: https://github.com/dbcli/pgcli#detailed-installation-instructions
-.. _`psycopg docs`: http://initd.org/psycopg/docs/install.html#change-in-binary-packages-between-psycopg-2-7-and-2-8
 
 Usage
 -----
