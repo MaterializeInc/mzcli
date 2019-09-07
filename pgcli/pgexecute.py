@@ -466,18 +466,8 @@ class PGExecute(object):
 
     def search_path(self):
         """Returns the current search path as a list of schema names"""
-
-        try:
-            with self.conn.cursor() as cur:
-                _logger.debug("Search path query. sql: %r", self.search_path_query)
-                cur.execute(self.search_path_query)
-                return [x[0] for x in cur.fetchall()]
-        except psycopg2.ProgrammingError:
-            fallback = "SELECT * FROM current_schemas(true)"
-            with self.conn.cursor() as cur:
-                _logger.debug("Search path query. sql: %r", fallback)
-                cur.execute(fallback)
-                return cur.fetchone()[0]
+        # materialize only has one schema, and it is the empty schema
+        return [""]
 
     def view_definition(self, spec):
         """Returns the SQL defining views described by `spec`"""
@@ -512,11 +502,8 @@ class PGExecute(object):
 
     def schemata(self):
         """Returns a list of schema names in the database"""
-
-        with self.conn.cursor() as cur:
-            _logger.debug("Schemata Query. sql: %r", self.schemata_query)
-            cur.execute(self.schemata_query)
-            return [x[0] for x in cur.fetchall()]
+        # materialize only has one schema and it is the empty schema
+        return [""]
 
     def _relations(self, kinds=("r", "v", "m")):
         """Get table or view name metadata
@@ -529,11 +516,11 @@ class PGExecute(object):
         """
 
         with self.conn.cursor() as cur:
-            sql = cur.mogrify(self.tables_query, [kinds])
+            sql = "SHOW TABLES"
             _logger.debug("Tables Query. sql: %r", sql)
             cur.execute(sql)
             for row in cur:
-                yield row
+                yield ("", row[0])
 
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
@@ -555,9 +542,18 @@ class PGExecute(object):
                 'r' - table
                 'v' - view
                 'm' - materialized view
-        :return: list of (schema_name, relation_name, column_name, column_type) tuples
+        :return: list of (schema_name, relation_name, column_name, column_type, has_default, default) tuples
         """
-        return []
+        with self.conn.cursor() as cur:
+            cur.execute("SHOW TABLES")
+            for row in cur.fetchall():
+                tbl = row[0]
+                # TODO: Materialize should support mogrified table names
+                sql = "SHOW COLUMNS FROM {}".format(tbl)
+                _logger.debug("Show Columns Query: %s", sql)
+                cur.execute(sql)
+                for column in cur.fetchall():
+                    yield ("", tbl, column[0], column[2], False, None)
 
     def table_columns(self):
         for row in self._columns(kinds=["r"]):
@@ -568,17 +564,8 @@ class PGExecute(object):
             yield row
 
     def databases(self):
-        with self.conn.cursor() as cur:
-            _logger.debug("Databases Query. sql: %r", self.databases_query)
-            cur.execute(self.databases_query)
-            return [x[0] for x in cur.fetchall()]
-
-    def full_databases(self):
-        with self.conn.cursor() as cur:
-            _logger.debug("Databases Query. sql: %r", self.full_databases_query)
-            cur.execute(self.full_databases_query)
-            headers = [x[0] for x in cur.description]
-            return cur.fetchall(), headers, cur.statusmessage
+        # materialize has no databases
+        return [""]
 
     def get_socket_directory(self):
         with self.conn.cursor() as cur:

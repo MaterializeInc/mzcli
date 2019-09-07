@@ -62,11 +62,7 @@ class CompletionRefresher(object):
 
         while 1:
             for refresher in self.refreshers.values():
-                try:
-                    refresher(completer, executor)
-                except Exception as e:
-                    print(f"db error: {e}")
-                    return
+                refresher(completer, executor)
                 if self._restart_refresh.is_set():
                     self._restart_refresh.clear()
                     break
@@ -147,4 +143,5 @@ def refresh_casing(completer, executor):
 
 @refresher("functions")
 def refresh_functions(completer, executor):
-    completer.extend_functions(executor.functions())
+    pass
+    #completer.extend_functions(executor.functions())
