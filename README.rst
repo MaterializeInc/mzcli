@@ -1,25 +1,21 @@
 A REPL for the Materialize Streaming View Engine
 ------------------------------------------------
 
-|Build Status| |CodeCov| |PyPI| |Landscape| |Gitter|
-
 Quick Start
 -----------
 
-Recommended current install instructions:
-
-You should use pipx to installs scripts, which can installed like:
-
-::
+* You should use `pipx`_ to install scripts, which can installed like::
 
     python3 -m pip install --user pipx
     python3 -m pipx ensurepath
-    
-You also need an installed postgres.
+    export PATH="$HOME/.local/bin:$PATH"
 
-Then we have to download the mzcli package by visiting a url because it is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
+* The postgres dev headers have to be installed for a dependency to install::
 
-Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz.zip``)::
+    brew install postgres
+
+* We have to download the mzcli package by visiting a url because the repo is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
+* Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz.zip``)::
 
     LDFLAGS="-L/usr/local/opt/openssl/lib" CPPFLAGS="-I/usr/local/opt/openssl/include" \
         pipx install --spec ~/Downloads/mzcli-mtrlz.zip mzcli
@@ -34,6 +30,7 @@ MySQL Equivalent: http://mycli.net
 .. image:: screenshots/pgcli.gif
 .. image:: screenshots/image01.png
 
+.. _pipx: https://pipxproject.github.io/pipx/
 
 Usage
 -----
