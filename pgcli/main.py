@@ -773,6 +773,8 @@ class PGCli(object):
             ):
                 prompt = self.get_prompt("\\d> ")
 
+            # a materialize prompt
+            prompt = "mz> "
             return [("class:prompt", prompt)]
 
         def get_continuation(width, line_number, is_soft_wrap):
