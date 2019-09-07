@@ -100,15 +100,12 @@ def register_json_typecasters(conn, loads_fn):
     """
     available = set()
 
-    print('novail')
     for name in ["json", "jsonb"]:
         try:
             psycopg2.extras.register_json(conn, loads=loads_fn, name=name)
             available.add(name)
         except psycopg2.ProgrammingError:
             pass
-
-    print('avail?')
 
     return available
 
@@ -217,7 +214,6 @@ class PGExecute(object):
         self.server_version = None
         self.extra_args = None
         self.connect(database, user, password, host, port, dsn, **kwargs)
-        print(f"connectorino db={database!r}")
         self.reset_expanded = None
 
     def copy(self):
@@ -273,7 +269,6 @@ class PGExecute(object):
         conn = psycopg2.connect(**conn_params)
         cursor = conn.cursor()
         conn.set_client_encoding("utf8")
-        print(f"conn={conn}")
 
         self._conn_params = conn_params
         if self.conn:
@@ -286,7 +281,6 @@ class PGExecute(object):
         # Note: moved this after setting autocommit because of #664.
         # TODO: use actual connection info from psycopg2.extensions.Connection.info as psycopg>2.8 is available and required dependency  # noqa
         dsn_parameters = conn.get_dsn_parameters()
-        print(f"dsn_params={dsn_parameters}")
 
         self.dbname = dsn_parameters.get("dbname")
         self.user = dsn_parameters.get("user")
@@ -300,7 +294,6 @@ class PGExecute(object):
 
         cursor.execute("SHOW ALL")
         db_parameters = dict(name_val_desc[:2] for name_val_desc in cursor.fetchall())
-        print(f"db_parameters={db_parameters}")
 
         #pid = self._select_one(cursor, "select pg_backend_pid()")[0]
         #self.pid = pid
@@ -310,13 +303,9 @@ class PGExecute(object):
         #self.server_version = self.get_server_version(cursor)
         self.servier_version = "1"
 
-        print(f"datety")
         register_date_typecasters(conn)
-        print(f"jsonty")
         #register_json_typecasters(self.conn, self._json_typecaster)
-        print("registering tcast")
         register_hstore_typecaster(self.conn)
-        print(f"conn: {self.conn}")
 
     @property
     def short_host(self):
@@ -458,9 +447,7 @@ class PGExecute(object):
         """Returns tuple (title, rows, headers, status)"""
         _logger.debug("Regular sql statement. sql: %r", split_sql)
         cur = self.conn.cursor()
-        print(f"{cur} execution {split_sql}")
         cur.execute(split_sql)
-        print("executed")
         # conn.notices persist between queies, we use pop to clear out the list
         title = ""
         while len(self.conn.notices) > 0:
@@ -570,7 +557,6 @@ class PGExecute(object):
                 'm' - materialized view
         :return: list of (schema_name, relation_name, column_name, column_type) tuples
         """
-        print("fetching columns")
         return []
 
     def table_columns(self):

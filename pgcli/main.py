@@ -551,10 +551,8 @@ class PGCli(object):
         # Note that passwd may be empty on the first attempt. If connection
         # fails because of a missing or incorrect password, but we're allowed to
         # prompt for a password (no -w flag), prompt for a passwd and try again.
-        print("connecto?")
         try:
             try:
-                print(f"database={database} {user} {host}:{port} dsn={dsn}")
                 pgexecute = PGExecute(database, user, passwd, host, port, dsn, **kwargs)
             except (OperationalError, InterfaceError) as e:
                 if should_ask_for_password(e):
@@ -586,7 +584,6 @@ class PGCli(object):
             self.logger.error("traceback: %r", traceback.format_exc())
             click.secho(str(e), err=True, fg="red")
             exit(1)
-        print(f"setting pge={pgexecute}")
 
         self.pgexecute = pgexecute
 
@@ -1276,7 +1273,6 @@ def cli(
     elif "://" in database:
         pgcli.connect_uri(database)
     elif "=" in database:
-        print(f"database={database!r} user={user}")
         pgcli.connect_dsn(database, user=user)
     elif os.environ.get("PGSERVICE", None):
         pgcli.connect_dsn("service={0}".format(os.environ["PGSERVICE"]))
