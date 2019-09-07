@@ -712,13 +712,6 @@ class PGCli(object):
 
         self.prompt_app = self._build_cli(history)
 
-        if not self.less_chatty:
-            print ("Server: PostgreSQL", self.pgexecute.server_version)
-            print ("Version:", __version__)
-            print ("Chat: https://gitter.im/dbcli/pgcli")
-            print ("Mail: https://groups.google.com/forum/#!forum/pgcli")
-            print ("Home: http://pgcli.com")
-
         try:
             while True:
                 try:
