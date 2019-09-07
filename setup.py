@@ -10,14 +10,14 @@ with open("pgcli/__init__.py", "rb") as f:
         ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
     )
 
-description = "CLI for Postgres Database. With auto-completion and syntax highlighting."
+description = "CLI for the Materialize streaming view engine. With auto-completion and syntax highlighting."
 
 install_requirements = [
     "pgspecial>=1.11.5",
     "click >= 4.1",
     "Pygments >= 2.0",  # Pygments has to be Capitalcased. WTF?
     "prompt_toolkit>=2.0.6,<2.1.0",
-    #"psycopg2 >= 2.7.4",
+    "psycopg2 >= 2.7.4",
     "sqlparse >=0.3.0,<0.4",
     "configobj >= 5.0.6",
     "humanize >= 0.5.1",
@@ -33,12 +33,12 @@ if platform.system() != "Windows" and not platform.system().startswith("CYGWIN")
     install_requirements.append("setproctitle >= 1.1.9")
 
 setup(
-    name="pgcli",
-    author="Pgcli Core Team",
+    name="mzcli",
+    author="Pgcli Core Team + The Materialize developers",
     author_email="pgcli-dev@googlegroups.com",
     version=version,
     license="BSD",
-    url="http://pgcli.com",
+    url="http://mtrlz.dev",
     packages=find_packages(),
     package_data={"pgcli": ["pgclirc", "packages/pgliterals/pgliterals.json"]},
     description=description,
@@ -47,7 +47,7 @@ setup(
     extras_require={"keyring": ["keyring >= 12.2.0"]},
     entry_points="""
         [console_scripts]
-        pgcli=pgcli.main:cli
+        mzcli=pgcli.main:cli
     """,
     classifiers=[
         "Intended Audience :: Developers",
