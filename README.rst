@@ -15,11 +15,14 @@ Quick Start
     brew install postgres
 
 * We have to download the mzcli package by visiting a url because the repo is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
-* Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz.zip``)::
+* Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz``)::
 
     LDFLAGS="-L/usr/local/opt/openssl/lib" CPPFLAGS="-I/usr/local/opt/openssl/include" \
-        pipx install --spec ~/Downloads/mzcli-mtrlz.zip mzcli
+        pipx install --spec ~/Downloads/mzcli-mtrlz mzcli
 
+If the above command fails with an error that mzcli-mtrlz cannot be found, then you are probably not using Safari (which
+optimistically opens zip files). Try the same command with `~/Downloads/mzcli-mtrlz.zip`` instead of the zip-less file
+name.
 
 This is a (wip) materialize client that does auto-completion and syntax highlighting.
 
