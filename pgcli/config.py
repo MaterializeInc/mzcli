@@ -8,11 +8,11 @@ from configobj import ConfigObj
 
 def config_location():
     if "XDG_CONFIG_HOME" in os.environ:
-        return "%s/pgcli/" % expanduser(os.environ["XDG_CONFIG_HOME"])
+        return "%s/mzcli/" % expanduser(os.environ["XDG_CONFIG_HOME"])
     elif platform.system() == "Windows":
-        return os.getenv("USERPROFILE") + "\\AppData\\Local\\dbcli\\pgcli\\"
+        return os.getenv("USERPROFILE") + "\\AppData\\Local\\dbcli\\mzcli\\"
     else:
-        return expanduser("~/.config/pgcli/")
+        return expanduser("~/.config/mzcli/")
 
 
 def load_config(usr_cfg, def_cfg=None):
@@ -49,17 +49,17 @@ def upgrade_config(config, def_config):
     cfg.write()
 
 
-def get_config(pgclirc_file=None):
+def get_config(mzclirc_file=None):
     from pgcli import __file__ as package_root
 
     package_root = os.path.dirname(package_root)
 
-    pgclirc_file = pgclirc_file or "%sconfig" % config_location()
+    mzclirc_file = mzclirc_file or "%sconfig" % config_location()
 
-    default_config = os.path.join(package_root, "pgclirc")
-    write_default_config(default_config, pgclirc_file)
+    default_config = os.path.join(package_root, "mzclirc")
+    write_default_config(default_config, mzclirc_file)
 
-    return load_config(pgclirc_file, default_config)
+    return load_config(mzclirc_file, default_config)
 
 
 def get_casing_file(config):

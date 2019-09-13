@@ -26,7 +26,7 @@ ext.register_type(ext.new_type((2249,), "RECORD", ext.UNICODE))
 # Postgres 9+ and as escaped binary in earlier versions.
 ext.register_type(ext.new_type((17,), "BYTEA_TEXT", psycopg2.STRING))
 
-# TODO: Get default timeout from pgclirc?
+# TODO: Get default timeout from mzclirc?
 _WAIT_SELECT_TIMEOUT = 1
 
 

@@ -158,7 +158,7 @@ class PGCli(object):
         force_passwd_prompt=False,
         never_passwd_prompt=False,
         pgexecute=None,
-        pgclirc_file=None,
+        mzclirc_file=None,
         row_limit=None,
         single_connection=False,
         less_chatty=None,
@@ -175,7 +175,7 @@ class PGCli(object):
         self.watch_command = None
 
         # Load config.
-        c = self.config = get_config(pgclirc_file)
+        c = self.config = get_config(mzclirc_file)
 
         NamedQueries.instance = NamedQueries.from_config(self.config)
 
@@ -774,8 +774,14 @@ class PGCli(object):
                 prompt = self.get_prompt("\\d> ")
 
             # a materialize prompt
-            prompt = "mz> "
-            return [("class:prompt", prompt)]
+            #from prompt_toolkit.formatted_text import FormattedText, to_formatted_text
+            if prompt == 'DARK_MODE':
+                prompt = [("#EE82EE", "m"), ("#9ADE83", "z"), ("", "> ")]
+            elif prompt == 'LIGHT_MODE':
+                prompt = [("#4B0082", "m"), ("#006400", "z"), ("", "> ")]
+            else:
+                prompt = [('class:prompt', prompt)]
+            return prompt
 
         def get_continuation(width, line_number, is_soft_wrap):
             continuation = self.multiline_continuation_char * (width - 1) + " "
@@ -1116,10 +1122,10 @@ class PGCli(object):
 @click.option("-v", "--version", is_flag=True, help="Version of pgcli.")
 @click.option("-d", "--dbname", "dbname_opt", help="database name to connect to.")
 @click.option(
-    "--pgclirc",
+    "--mzclirc",
     default=config_location() + "config",
-    envvar="PGCLIRC",
-    help="Location of pgclirc file.",
+    envvar="MZCLIRC",
+    help="Location of mzclirc file.",
     type=click.Path(dir_okay=False),
 )
 @click.option(
@@ -1127,13 +1133,13 @@ class PGCli(object):
     "--dsn",
     default="",
     envvar="DSN",
-    help="Use DSN configured into the [alias_dsn] section of pgclirc file.",
+    help="Use DSN configured into the [alias_dsn] section of mzclirc file.",
 )
 @click.option(
     "--list-dsn",
     "list_dsn",
     is_flag=True,
-    help="list of DSN configured into the [alias_dsn] section of pgclirc file.",
+    help="list of DSN configured into the [alias_dsn] section of mzclirc file.",
 )
 @click.option(
     "--row-limit",
@@ -1182,7 +1188,7 @@ def cli(
     dbname_opt,
     username,
     version,
-    pgclirc,
+    mzclirc,
     dsn,
     row_limit,
     less_chatty,
@@ -1203,26 +1209,26 @@ def cli(
 
     # Migrate the config file from old location.
     config_full_path = config_location() + "config"
-    if os.path.exists(os.path.expanduser("~/.pgclirc")):
+    if os.path.exists(os.path.expanduser("~/.mzclirc")):
         if not os.path.exists(config_full_path):
-            shutil.move(os.path.expanduser("~/.pgclirc"), config_full_path)
-            print ("Config file (~/.pgclirc) moved to new location", config_full_path)
+            shutil.move(os.path.expanduser("~/.mzclirc"), config_full_path)
+            print ("Config file (~/.mzclirc) moved to new location", config_full_path)
         else:
             print ("Config file is now located at", config_full_path)
             print (
-                "Please move the existing config file ~/.pgclirc to",
+                "Please move the existing config file ~/.mzclirc to",
                 config_full_path,
             )
     if list_dsn:
         try:
-            cfg = load_config(pgclirc, config_full_path)
+            cfg = load_config(mzclirc, config_full_path)
             for alias in cfg["alias_dsn"]:
                 click.secho(alias + " : " + cfg["alias_dsn"][alias])
             sys.exit(0)
         except Exception as err:
             click.secho(
                 "Invalid DSNs found in the config file. "
-                'Please check the "[alias_dsn]" section in pgclirc.',
+                'Please check the "[alias_dsn]" section in mzclirc.',
                 err=True,
                 fg="red",
             )
@@ -1231,7 +1237,7 @@ def cli(
     pgcli = PGCli(
         prompt_passwd,
         never_prompt,
-        pgclirc_file=pgclirc,
+        mzclirc_file=mzclirc,
         row_limit=row_limit,
         single_connection=single_connection,
         less_chatty=less_chatty,
@@ -1253,12 +1259,12 @@ def cli(
 
     if dsn is not "":
         try:
-            cfg = load_config(pgclirc, config_full_path)
+            cfg = load_config(mzclirc, config_full_path)
             dsn_config = cfg["alias_dsn"][dsn]
         except:
             click.secho(
                 "Invalid DSNs found in the config file. "
-                'Please check the "[alias_dsn]" section in pgclirc.',
+                'Please check the "[alias_dsn]" section in mzclirc.',
                 err=True,
                 fg="red",
             )

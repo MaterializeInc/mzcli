@@ -263,7 +263,7 @@ def test_i_works(tmpdir, executor):
     sqlfile = tmpdir.join("test.sql")
     sqlfile.write("SELECT NOW()")
     rcfile = str(tmpdir.join("rcfile"))
-    cli = PGCli(pgexecute=executor, pgclirc_file=rcfile)
+    cli = PGCli(pgexecute=executor, mzclirc_file=rcfile)
     statement = r"\i {0}".format(sqlfile)
     run(executor, statement, pgspecial=cli.pgspecial)
 
@@ -271,13 +271,13 @@ def test_i_works(tmpdir, executor):
 def test_missing_rc_dir(tmpdir):
     rcfile = str(tmpdir.join("subdir").join("rcfile"))
 
-    PGCli(pgclirc_file=rcfile)
+    PGCli(mzclirc_file=rcfile)
     assert os.path.exists(rcfile)
 
 
 def test_quoted_db_uri(tmpdir):
     with mock.patch.object(PGCli, "connect") as mock_connect:
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri("postgres://bar%5E:%5Dfoo@baz.com/testdb%5B")
     mock_connect.assert_called_with(
         database="testdb[", host="baz.com", user="bar^", passwd="]foo"
@@ -286,7 +286,7 @@ def test_quoted_db_uri(tmpdir):
 
 def test_ssl_db_uri(tmpdir):
     with mock.patch.object(PGCli, "connect") as mock_connect:
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri(
             "postgres://bar%5E:%5Dfoo@baz.com/testdb%5B?"
             "sslmode=verify-full&sslcert=m%79.pem&sslkey=my-key.pem&sslrootcert=c%61.pem"
@@ -305,7 +305,7 @@ def test_ssl_db_uri(tmpdir):
 
 def test_port_db_uri(tmpdir):
     with mock.patch.object(PGCli, "connect") as mock_connect:
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri("postgres://bar:foo@baz.com:2543/testdb")
     mock_connect.assert_called_with(
         database="testdb", host="baz.com", user="bar", passwd="foo", port="2543"
@@ -314,7 +314,7 @@ def test_port_db_uri(tmpdir):
 
 def test_multihost_db_uri(tmpdir):
     with mock.patch.object(PGCli, "connect") as mock_connect:
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri(
             "postgres://bar:foo@baz1.com:2543,baz2.com:2543,baz3.com:2543/testdb"
         )
@@ -330,7 +330,7 @@ def test_multihost_db_uri(tmpdir):
 def test_application_name_db_uri(tmpdir):
     with mock.patch.object(PGExecute, "__init__") as mock_pgexecute:
         mock_pgexecute.return_value = None
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri("postgres://bar@baz.com/?application_name=cow")
     mock_pgexecute.assert_called_with(
         "bar", "bar", "", "baz.com", "", "", application_name="cow"

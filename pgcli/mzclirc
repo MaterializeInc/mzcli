@@ -115,18 +115,11 @@ row_limit = 1000
 # Skip intro on startup and goodbye on exit
 less_chatty = False
 
-# Postgres prompt
-# \t - Current date and time
-# \u - Username
-# \h - Short hostname of the server (up to first '.')
-# \H - Hostname of the server
-# \d - Database name
-# \p - Database port
-# \i - Postgres PID
-# \# - "@" sign if logged in as superuser, '>' in other case
-# \n - Newline
-# \dsn_alias - name of dsn alias if -D option is used (empty otherwise)
-prompt = '\u@\h:\d> '
+# materialize prompt
+# LIGHT_MODE means you have a light background, DARK_MODE means you have a dark background
+prompt = 'LIGHT_MODE'
+# prompt = 'DARK_MODE
+# prompt = 'mz> '
 
 # Number of lines to reserve for the suggestion menu
 min_num_menu_lines = 4
@@ -140,11 +133,12 @@ null_string = '<null>'
 # manage pager on startup
 enable_pager = True
 
-# Use keyring to automatically save and load password in a secure manner 
+# Use keyring to automatically save and load password in a secure manner
 keyring = True
 
 # Custom colors for the completion menu, toolbar, etc.
 [colors]
+# prompt = 'bg:#008080'  if you don't want to use the built-in themes
 completion-menu.completion.current = 'bg:#ffffff #000000'
 completion-menu.completion = 'bg:#008888 #ffffff'
 completion-menu.meta.completion.current = 'bg:#44aaaa #000000'

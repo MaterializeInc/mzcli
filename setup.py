@@ -40,7 +40,7 @@ setup(
     license="BSD",
     url="http://mtrlz.dev",
     packages=find_packages(),
-    package_data={"pgcli": ["pgclirc", "packages/pgliterals/pgliterals.json"]},
+    package_data={"pgcli": ["mzclirc", "packages/pgliterals/pgliterals.json"]},
     description=description,
     long_description=open("README.rst").read(),
     install_requires=install_requirements,
