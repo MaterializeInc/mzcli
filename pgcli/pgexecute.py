@@ -514,13 +514,23 @@ class PGExecute(object):
                 'm' - materialized view
         :return: (schema_name, rel_name) tuples
         """
+        for kind in kinds:
+            if kind == "m":
+                # we only have immediate views
+                continue
+            elif kind == "r":
+                sql = "SHOW TABLES"
+            elif kind == "v":
+                sql = "SHOW VIEWS"
+            else:
+                _logger.error("Unexpeded relation kind: '%s'", kind)
+                return
 
-        with self.conn.cursor() as cur:
-            sql = "SHOW TABLES"
-            _logger.debug("Tables Query. sql: %r", sql)
-            cur.execute(sql)
-            for row in cur:
-                yield ("", row[0])
+            with self.conn.cursor() as cur:
+                _logger.debug("Tables Query %s. sql: %r", kind, sql)
+                cur.execute(sql)
+                for row in cur:
+                    yield ("", row[0])
 
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
@@ -532,7 +542,7 @@ class PGExecute(object):
 
             Includes both views and and materialized views
         """
-        for row in self._relations(kinds=["v", "m"]):
+        for row in self._relations(kinds=["v"]):
             yield row
 
     def _columns(self, kinds=("r", "v", "m")):
@@ -545,9 +555,8 @@ class PGExecute(object):
         :return: list of (schema_name, relation_name, column_name, column_type, has_default, default) tuples
         """
         with self.conn.cursor() as cur:
-            cur.execute("SHOW TABLES")
-            for row in cur.fetchall():
-                tbl = row[0]
+            for row in self._relations(kinds):
+                tbl = row[1]
                 # TODO: Materialize should support mogrified table names
                 sql = "SHOW COLUMNS FROM {}".format(tbl)
                 _logger.debug("Show Columns Query: %s", sql)
@@ -560,7 +569,7 @@ class PGExecute(object):
             yield row
 
     def view_columns(self):
-        for row in self._columns(kinds=["v", "m"]):
+        for row in self._columns(kinds=["v"]):
             yield row
 
     def databases(self):
