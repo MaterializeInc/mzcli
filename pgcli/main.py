@@ -765,7 +765,11 @@ class PGCli(object):
             else:
                 prompt_format = self.prompt_format
 
-            prompt = self.get_prompt(prompt_format)
+            env_prompt = os.getenv('MZCLI_PROMPT')
+            if env_prompt:
+                prompt = env_prompt
+            else:
+                prompt = self.get_prompt(prompt_format)
 
             if (
                 prompt_format == self.default_prompt
