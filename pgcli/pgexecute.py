@@ -588,8 +588,8 @@ class PGExecute(object):
     def foreignkeys(self):
         """Yields ForeignKey named tuples"""
 
-        if self.conn.server_version < 90000:
-            return
+        # Materialize doesn't support several aspects of the following query.
+        return
 
         with self.conn.cursor() as cur:
             query = """
@@ -627,6 +627,10 @@ class PGExecute(object):
 
     def functions(self):
         """Yields FunctionMetadata named tuples"""
+
+        # Materialize doesn't support the Postgres constructs used in any of
+        # the below queries.
+        return
 
         if self.conn.server_version >= 110000:
             query = """
