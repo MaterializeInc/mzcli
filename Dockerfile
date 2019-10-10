@@ -19,6 +19,7 @@ RUN apt-get update -o Acquire::Languages=none \
     && rm -rf \
         /var/cache/apt/archives \
         /var/lib/apt/lists/* \
+        /root/.cache/pip/ \
     ;
 
 CMD ["mzcli", "host=materialized port=6875 sslmode=disable"]
