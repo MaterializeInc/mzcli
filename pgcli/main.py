@@ -1261,7 +1261,7 @@ def cli(
     if list_databases:
         database = "postgres"
 
-    if dsn is not "":
+    if dsn != "":
         try:
             cfg = load_config(mzclirc, config_full_path)
             dsn_config = cfg["alias_dsn"][dsn]
