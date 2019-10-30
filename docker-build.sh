@@ -38,7 +38,7 @@ main() {
 }
 
 build() {
-    run docker build -t "${REPO}:latest" -t "${REPO}:${NOW}" .
+    run docker build -t "${REPO}:latest" -t "${REPO}:local" -t "${REPO}:${NOW}" .
 }
 
 push() {
