@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO=materialize/mcli
+REPO=materialize/mzcli
 NOW=$(date +%Y-%m-%d)
 
 usage() {
