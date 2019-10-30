@@ -6,21 +6,30 @@ REPO=materialize/mzcli
 NOW=$(date +%Y-%m-%d)
 
 usage() {
-    echo "usage: $0 [-p|-n] [--push|--no-push]"
+    echo "usage: $0 [-p|-n] [--push|--no-push|--only-push]"
     exit 0
 }
 
 main() {
-    local push=$1 && shift
+    local push=${1:-__prompt}
+    [[ $push != __prompt ]] && shift
+    local do_build=Y
+    local do_push
     case $push in
-        -p|--push) response=Y ;;
-        -n|--no-push) response=N ;;
+        -p|--push) do_push=Y ;;
+        -n|--no-push) do_push=N ;;
+        --only-push)
+            do_build=N
+            do_push=Y
+            ;;
         -h|--help) usage ;;
-        *) read -r -p "Run docker push [y/N] " response
+        *) read -r -p "Run docker push [y/N] " do_push
     esac
 
-    build
-    if [[ ${response^^} =~ Y.* ]] ; then
+    if [[ $do_build == Y ]]; then
+        build
+    fi
+    if [[ ${do_push^^} =~ Y.* ]] ; then
         push
     else
         echo "Skipping docker push"
