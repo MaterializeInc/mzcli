@@ -40,10 +40,10 @@ def create_toolbar_tokens_func(pgcli):
 
         if pgcli.vi_mode:
             result.append(
-                ("class:bottom-toolbar", "[F4] Vi-mode (" + _get_vi_mode() + ")")
+                ("class:bottom-toolbar", "[F4] Mode: Vi (" + _get_vi_mode() + ")")
             )
         else:
-            result.append(("class:bottom-toolbar", "[F4] Emacs-mode"))
+            result.append(("class:bottom-toolbar", "[F4] Mode: Emacs"))
 
         if pgcli.pgexecute.failed_transaction():
             result.append(
