@@ -495,7 +495,8 @@ class PGCli(object):
             user = getuser()
 
         if not database:
-            database = user
+            # every materialize instance comes with a "materialize" db
+            database = "materialize"
 
         kwargs.setdefault("application_name", "pgcli")
 
@@ -1036,7 +1037,7 @@ class PGCli(object):
         string = string.replace("\\d", self.pgexecute.dbname or "(none)")
         string = string.replace(
             "\\p",
-            str(self.pgexecute.port) if self.pgexecute.port is not None else "5432",
+            str(self.pgexecute.port) if self.pgexecute.port is not None else "6875",
         )
         string = string.replace("\\i", str(self.pgexecute.pid) or "(none)")
         string = string.replace("\\#", "#" if (self.pgexecute.superuser) else ">")
@@ -1082,14 +1083,14 @@ class PGCli(object):
 @click.option(
     "-h",
     "--host",
-    default="",
+    default="localhost",
     envvar="PGHOST",
     help="Host address of the postgres database.",
 )
 @click.option(
     "-p",
     "--port",
-    default=5432,
+    default=6875,
     help="Port number at which the " "postgres instance is listening.",
     envvar="PGPORT",
     type=click.INT,
@@ -1182,8 +1183,8 @@ class PGCli(object):
 @click.option(
     "--warn/--no-warn", default=None, help="Warn before running a destructive query."
 )
-@click.argument("dbname", default=lambda: None, envvar="PGDATABASE", nargs=1)
-@click.argument("username", default=lambda: None, envvar="PGUSER", nargs=1)
+@click.argument("dbname", default=lambda: None, envvar="MZDATABASE", nargs=1)
+@click.argument("username", default=lambda: None, envvar="MZUSER", nargs=1)
 def cli(
     dbname,
     username_opt,
@@ -1257,7 +1258,7 @@ def cli(
     if dbname_opt and dbname:
         # work as psql: when database is given as option and argument use the argument as user
         username = dbname
-    database = dbname_opt or dbname or ""
+    database = dbname_opt or dbname or "materialize"
     user = username_opt or username
 
     # because option --list or -l are not supposed to have a db name
