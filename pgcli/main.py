@@ -423,6 +423,7 @@ class PGCli(object):
             log_file = config_location() + "log"
         ensure_dir_exists(log_file)
         log_level = self.config["main"]["log_level"]
+        log_level = os.getenv("MZCLI_LOG_LEVEL", log_level)
 
         # Disable logging if value is NONE by switching to a no-op handler.
         # Set log level to a high value so it doesn't even waste cycles getting called.
@@ -440,8 +441,7 @@ class PGCli(object):
             "NONE": logging.CRITICAL,
         }
 
-        #log_level = level_map[log_level.upper()]
-        log_level = logging.DEBUG
+        log_level = level_map[log_level.upper()]
 
         formatter = logging.Formatter(
             "%(asctime)s (%(process)d/%(threadName)s) "
@@ -475,17 +475,20 @@ class PGCli(object):
                 self.logger.warning("import keyring failed: %r.", e)
 
     def connect_dsn(self, dsn, **kwargs):
+        self.logger.debug("connecting via dsn: %s (%s)", dsn, kwargs)
         self.connect(dsn=dsn, **kwargs)
 
     def connect_uri(self, uri):
+        self.logger.debug("connecting via uri: %s", uri)
         kwargs = psycopg2.extensions.parse_dsn(uri)
         remap = {"dbname": "database", "password": "passwd"}
         kwargs = {remap.get(k, k): v for k, v in kwargs.items()}
         self.connect(**kwargs)
 
     def connect(
-        self, database="", host="", user="", port="", passwd="", dsn="", **kwargs
+        self, database="", host="", user="", port="6875", passwd="", dsn="", **kwargs
     ):
+        self.logger.debug("connecting inner host=%s port=%s dsn=%s", host, port, dsn)
         # Connect to the database.
 
         if not user:
