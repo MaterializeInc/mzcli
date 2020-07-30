@@ -1,63 +1,48 @@
-A REPL for the Materialize Streaming View Engine
-------------------------------------------------
+A REPL for the Materialize Streaming Database Engine
+----------------------------------------------------
+
+See https://materialize.io for an introduction to Materialize.
 
 Quick Start
 -----------
 
-* You should use `pipx`_ to install scripts, which can installed like::
+The easiest way to get started with ``mzcli`` with a remote materialized is to use docker::
 
-    python3 -m pip install --user pipx
-    python3 -m pipx ensurepath
-    export PATH="$HOME/.local/bin:$PATH"
+    docker run -it materialize/mzcli --help
 
-* The postgres dev headers have to be installed for a dependency to install::
-
-    brew install postgres
-
-* We have to download the mzcli package by visiting a url because the repo is currently private: https://github.com/MaterializeInc/mzcli/archive/mtrlz.zip
-* Which allows us to install while linking to the brew-provided openssl (by default that should save to ``~/Downloads/mzcli-mtrlz``)::
-
-    LDFLAGS="-L/usr/local/opt/openssl/lib" CPPFLAGS="-I/usr/local/opt/openssl/include" \
-        pipx install --spec ~/Downloads/mzcli-mtrlz mzcli
-
-If the above command fails with an error that mzcli-mtrlz cannot be found, then you are probably not using Safari (which
-optimistically opens zip files). Try the same command with `~/Downloads/mzcli-mtrlz.zip`` instead of the zip-less file
-name.
-
-This is a (wip) materialize client that does auto-completion and syntax highlighting.
-
-Home Page: http://pgcli.com
-
-MySQL Equivalent: http://mycli.net
+This is a work-in-progress materialize client that does auto-completion and
+syntax highlighting. It is a soft fork of `pgcli`, and will hopefully one day be
+even less of a fork from pgcli, but due to materialize's extra functionality
+this will be a long-lived tool for interacting with ``materialized``.
 
 .. image:: screenshots/pgcli.gif
 .. image:: screenshots/image01.png
 
-.. _pipx: https://pipxproject.github.io/pipx/
+.. _pgcli: https://www.pgcli.com/
 
 Usage
 -----
 
 ::
 
-    $ pgcli [database_name]
+    $ mzcli [database_name]
 
     or
 
-    $ pgcli postgresql://[user[:password]@][netloc][:port][/dbname][?extra=value[&other=other-value]]
+    $ mzcli postgresql://[user[:password]@][netloc][:port][/dbname][?extra=value[&other=other-value]]
 
 Examples:
 
 ::
 
-    $ pgcli local_database
+    $ mzcli local_database
 
-    $ pgcli postgres://amjith:pa$$w0rd@example.com:5432/app_db?sslmode=verify-ca&sslrootcert=/myrootcert
+    $ mzcli postgres://amjith:pa$$w0rd@example.com:5432/app_db?sslmode=verify-ca&sslrootcert=/myrootcert
 
 Features
 --------
 
-The `pgcli` is written using prompt_toolkit_.
+The ``mzcli`` is written using prompt_toolkit_.
 
 * Auto-completes as you type for SQL keywords as well as tables and
   columns in the database.
@@ -76,11 +61,15 @@ The `pgcli` is written using prompt_toolkit_.
 
 Config
 ------
-A config file is automatically created at ``~/.config/pgcli/config`` at first launch.
+
+A config file is automatically created at ``~/.config/mzcli/config`` at first launch.
 See the file itself for a description of all available options.
 
 Contributions:
 --------------
+
+While we are not pgcli, the following documentation expresses our sentiments
+and still correctly represents the development workflow.
 
 If you're interested in contributing to this project, first of all I would like
 to extend my heartfelt gratitude. I've written a small doc to describe how to
@@ -88,234 +77,237 @@ get this running in a development setup.
 
 https://github.com/dbcli/pgcli/blob/master/DEVELOP.rst
 
-Please feel free to reach out to me if you need help.
-My email: amjith.r@gmail.com, Twitter: `@amjithr <http://twitter.com/amjithr>`_
+Please feel free to file an issue if you need help, or jump in our `community
+slack`_.
 
-Detailed Installation Instructions:
------------------------------------
+.. _community slack: https://join.slack.com/t/materializecommunity/shared_invite/zt-fpfvczj5-efOE_8qvM4fWpHSvMxpKbA
 
-macOS:
-======
+..
+  Detailed Installation Instructions:
+  -----------------------------------
 
-The easiest way to install pgcli is using Homebrew.
+  macOS:
+  ======
 
-::
+  The easiest way to install pgcli is using Homebrew.
 
-    $ brew install pgcli
+  ::
 
-Done!
+      $ brew install pgcli
 
-Alternatively, you can install ``pgcli`` as a python package using a package
-manager called called ``pip``. You will need postgres installed on your system
-for this to work.
+  Done!
 
-In depth getting started guide for ``pip`` - https://pip.pypa.io/en/latest/installing.html.
+  Alternatively, you can install ``pgcli`` as a python package using a package
+  manager called called ``pip``. You will need postgres installed on your system
+  for this to work.
 
-::
+  In depth getting started guide for ``pip`` - https://pip.pypa.io/en/latest/installing.html.
 
-    $ which pip
+  ::
 
-If it is installed then you can do:
+      $ which pip
 
-::
+  If it is installed then you can do:
 
-    $ pip install pgcli
+  ::
 
-If that fails due to permission issues, you might need to run the command with
-sudo permissions.
+      $ pip install pgcli
 
-::
+  If that fails due to permission issues, you might need to run the command with
+  sudo permissions.
 
-    $ sudo pip install pgcli
+  ::
 
-If pip is not installed check if easy_install is available on the system.
+      $ sudo pip install pgcli
 
-::
+  If pip is not installed check if easy_install is available on the system.
 
-    $ which easy_install
+  ::
 
-    $ sudo easy_install pgcli
+      $ which easy_install
 
-Linux:
-======
+      $ sudo easy_install pgcli
 
-In depth getting started guide for ``pip`` - https://pip.pypa.io/en/latest/installing.html.
+  Linux:
+  ======
 
-Check if pip is already available in your system.
+  In depth getting started guide for ``pip`` - https://pip.pypa.io/en/latest/installing.html.
 
-::
+  Check if pip is already available in your system.
 
-    $ which pip
+  ::
 
-If it doesn't exist, use your linux package manager to install `pip`. This
-might look something like:
+      $ which pip
 
-::
+  If it doesn't exist, use your linux package manager to install `pip`. This
+  might look something like:
 
-    $ sudo apt-get install python-pip   # Debian, Ubuntu, Mint etc
+  ::
 
-    or
+      $ sudo apt-get install python-pip   # Debian, Ubuntu, Mint etc
 
-    $ sudo yum install python-pip  # RHEL, Centos, Fedora etc
+      or
 
-``pgcli`` requires python-dev, libpq-dev and libevent-dev packages. You can
-install these via your operating system package manager.
+      $ sudo yum install python-pip  # RHEL, Centos, Fedora etc
 
+  ``pgcli`` requires python-dev, libpq-dev and libevent-dev packages. You can
+  install these via your operating system package manager.
 
-::
 
-    $ sudo apt-get install python-dev libpq-dev libevent-dev
+  ::
 
-    or
+      $ sudo apt-get install python-dev libpq-dev libevent-dev
 
-    $ sudo yum install python-devel postgresql-devel
+      or
 
-Then you can install pgcli:
+      $ sudo yum install python-devel postgresql-devel
 
-::
+  Then you can install pgcli:
 
-    $ sudo pip install pgcli
+  ::
 
+      $ sudo pip install pgcli
 
-Docker
-======
 
-Pgcli can be run from within Docker. This can be useful to try pgcli without
-installing it, or any dependencies, system-wide.
+  Docker
+  ======
 
-To build the image:
+  Pgcli can be run from within Docker. This can be useful to try pgcli without
+  installing it, or any dependencies, system-wide.
 
-::
+  To build the image:
 
-    $ docker build -t pgcli .
+  ::
 
-To create a container from the image:
+      $ docker build -t pgcli .
 
-::
+  To create a container from the image:
 
-    $ docker run --rm -ti pgcli pgcli <ARGS>
+  ::
 
-To access postgresql databases listening on localhost, make sure to run the
-docker in "host net mode". E.g. to access a database called "foo" on the
-postgresql server running on localhost:5432 (the standard port):
+      $ docker run --rm -ti pgcli pgcli <ARGS>
 
-::
+  To access postgresql databases listening on localhost, make sure to run the
+  docker in "host net mode". E.g. to access a database called "foo" on the
+  postgresql server running on localhost:5432 (the standard port):
 
-    $ docker run --rm -ti --net host pgcli pgcli -h localhost foo
+  ::
 
-To connect to a locally running instance over a unix socket, bind the socket to
-the docker container:
+      $ docker run --rm -ti --net host pgcli pgcli -h localhost foo
 
-::
+  To connect to a locally running instance over a unix socket, bind the socket to
+  the docker container:
 
-    $ docker run --rm -ti -v /var/run/postgres:/var/run/postgres pgcli pgcli foo
+  ::
 
+      $ docker run --rm -ti -v /var/run/postgres:/var/run/postgres pgcli pgcli foo
 
-IPython
-=======
 
-Pgcli can be run from within `IPython <https://ipython.org>`_ console. When working on a query,
-it may be useful to drop into a pgcli session without leaving the IPython console, iterate on a
-query, then quit pgcli to find the query results in your IPython workspace.
+  IPython
+  =======
 
-Assuming you have IPython installed:
+  Pgcli can be run from within `IPython <https://ipython.org>`_ console. When working on a query,
+  it may be useful to drop into a pgcli session without leaving the IPython console, iterate on a
+  query, then quit pgcli to find the query results in your IPython workspace.
 
-::
+  Assuming you have IPython installed:
 
-    $ pip install ipython-sql
+  ::
 
-After that, run ipython and load the ``pgcli.magic`` extension:
+      $ pip install ipython-sql
 
-::
+  After that, run ipython and load the ``pgcli.magic`` extension:
 
-    $ ipython
+  ::
 
-    In [1]: %load_ext pgcli.magic
+      $ ipython
 
+      In [1]: %load_ext pgcli.magic
 
-Connect to a database and construct a query:
 
-::
+  Connect to a database and construct a query:
 
-    In [2]: %pgcli postgres://someone@localhost:5432/world
-    Connected: someone@world
-    someone@localhost:world> select * from city c where countrycode = 'USA' and population > 1000000;
-    +------+--------------+---------------+--------------+--------------+
-    | id   | name         | countrycode   | district     | population   |
-    |------+--------------+---------------+--------------+--------------|
-    | 3793 | New York     | USA           | New York     | 8008278      |
-    | 3794 | Los Angeles  | USA           | California   | 3694820      |
-    | 3795 | Chicago      | USA           | Illinois     | 2896016      |
-    | 3796 | Houston      | USA           | Texas        | 1953631      |
-    | 3797 | Philadelphia | USA           | Pennsylvania | 1517550      |
-    | 3798 | Phoenix      | USA           | Arizona      | 1321045      |
-    | 3799 | San Diego    | USA           | California   | 1223400      |
-    | 3800 | Dallas       | USA           | Texas        | 1188580      |
-    | 3801 | San Antonio  | USA           | Texas        | 1144646      |
-    +------+--------------+---------------+--------------+--------------+
-    SELECT 9
-    Time: 0.003s
+  ::
 
+      In [2]: %pgcli postgres://someone@localhost:5432/world
+      Connected: someone@world
+      someone@localhost:world> select * from city c where countrycode = 'USA' and population > 1000000;
+      +------+--------------+---------------+--------------+--------------+
+      | id   | name         | countrycode   | district     | population   |
+      |------+--------------+---------------+--------------+--------------|
+      | 3793 | New York     | USA           | New York     | 8008278      |
+      | 3794 | Los Angeles  | USA           | California   | 3694820      |
+      | 3795 | Chicago      | USA           | Illinois     | 2896016      |
+      | 3796 | Houston      | USA           | Texas        | 1953631      |
+      | 3797 | Philadelphia | USA           | Pennsylvania | 1517550      |
+      | 3798 | Phoenix      | USA           | Arizona      | 1321045      |
+      | 3799 | San Diego    | USA           | California   | 1223400      |
+      | 3800 | Dallas       | USA           | Texas        | 1188580      |
+      | 3801 | San Antonio  | USA           | Texas        | 1144646      |
+      +------+--------------+---------------+--------------+--------------+
+      SELECT 9
+      Time: 0.003s
 
-Exit out of pgcli session with ``Ctrl + D`` and find the query results:
 
-::
+  Exit out of pgcli session with ``Ctrl + D`` and find the query results:
 
-    someone@localhost:world>
-    Goodbye!
-    9 rows affected.
-    Out[2]:
-    [(3793, u'New York', u'USA', u'New York', 8008278),
-     (3794, u'Los Angeles', u'USA', u'California', 3694820),
-     (3795, u'Chicago', u'USA', u'Illinois', 2896016),
-     (3796, u'Houston', u'USA', u'Texas', 1953631),
-     (3797, u'Philadelphia', u'USA', u'Pennsylvania', 1517550),
-     (3798, u'Phoenix', u'USA', u'Arizona', 1321045),
-     (3799, u'San Diego', u'USA', u'California', 1223400),
-     (3800, u'Dallas', u'USA', u'Texas', 1188580),
-     (3801, u'San Antonio', u'USA', u'Texas', 1144646)]
+  ::
 
-The results are available in special local variable ``_``, and can be assigned to a variable of your
-choice:
+      someone@localhost:world>
+      Goodbye!
+      9 rows affected.
+      Out[2]:
+      [(3793, u'New York', u'USA', u'New York', 8008278),
+       (3794, u'Los Angeles', u'USA', u'California', 3694820),
+       (3795, u'Chicago', u'USA', u'Illinois', 2896016),
+       (3796, u'Houston', u'USA', u'Texas', 1953631),
+       (3797, u'Philadelphia', u'USA', u'Pennsylvania', 1517550),
+       (3798, u'Phoenix', u'USA', u'Arizona', 1321045),
+       (3799, u'San Diego', u'USA', u'California', 1223400),
+       (3800, u'Dallas', u'USA', u'Texas', 1188580),
+       (3801, u'San Antonio', u'USA', u'Texas', 1144646)]
 
-::
+  The results are available in special local variable ``_``, and can be assigned to a variable of your
+  choice:
 
-    In [3]: my_result = _
+  ::
 
+      In [3]: my_result = _
 
-Thanks:
--------
 
-A special thanks to `Jonathan Slenders <https://twitter.com/jonathan_s>`_ for
-creating `Python Prompt Toolkit <http://github.com/jonathanslenders/python-prompt-toolkit>`_,
-which is quite literally the backbone library, that made this app possible.
-Jonathan has also provided valuable feedback and support during the development
-of this app.
+  Thanks:
+  -------
 
-`Click <http://click.pocoo.org/>`_ is used for command line option parsing
-and printing error messages.
+  A special thanks to `Jonathan Slenders <https://twitter.com/jonathan_s>`_ for
+  creating `Python Prompt Toolkit <http://github.com/jonathanslenders/python-prompt-toolkit>`_,
+  which is quite literally the backbone library, that made this app possible.
+  Jonathan has also provided valuable feedback and support during the development
+  of this app.
 
-Thanks to `psycopg <http://initd.org/psycopg/>`_ for providing a rock solid
-interface to Postgres database.
+  `Click <http://click.pocoo.org/>`_ is used for command line option parsing
+  and printing error messages.
 
-Thanks to all the beta testers and contributors for your time and patience. :)
+  Thanks to `psycopg <http://initd.org/psycopg/>`_ for providing a rock solid
+  interface to Postgres database.
 
+  Thanks to all the beta testers and contributors for your time and patience. :)
 
-.. |Build Status| image:: https://api.travis-ci.org/dbcli/pgcli.svg?branch=master
-    :target: https://travis-ci.org/dbcli/pgcli
 
-.. |CodeCov| image:: https://codecov.io/gh/dbcli/pgcli/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/dbcli/pgcli
-   :alt: Code coverage report
+  .. |Build Status| image:: https://api.travis-ci.org/dbcli/pgcli.svg?branch=master
+      :target: https://travis-ci.org/dbcli/pgcli
 
-.. |Landscape| image:: https://landscape.io/github/dbcli/pgcli/master/landscape.svg?style=flat
-   :target: https://landscape.io/github/dbcli/pgcli/master
-   :alt: Code Health
+  .. |CodeCov| image:: https://codecov.io/gh/dbcli/pgcli/branch/master/graph/badge.svg
+     :target: https://codecov.io/gh/dbcli/pgcli
+     :alt: Code coverage report
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/pgcli.svg
-    :target: https://pypi.python.org/pypi/pgcli/
-    :alt: Latest Version
+  .. |Landscape| image:: https://landscape.io/github/dbcli/pgcli/master/landscape.svg?style=flat
+     :target: https://landscape.io/github/dbcli/pgcli/master
+     :alt: Code Health
 
-.. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
-    :target: https://gitter.im/dbcli/pgcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-    :alt: Gitter Chat
+  .. |PyPI| image:: https://img.shields.io/pypi/v/pgcli.svg
+      :target: https://pypi.python.org/pypi/pgcli/
+      :alt: Latest Version
+
+  .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
+      :target: https://gitter.im/dbcli/pgcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+      :alt: Gitter Chat
