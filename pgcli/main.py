@@ -1085,13 +1085,13 @@ class PGCli(object):
     "--host",
     default="localhost",
     envvar="PGHOST",
-    help="Host address of the postgres database.",
+    help="Host address of the materialized database.",
 )
 @click.option(
     "-p",
     "--port",
     default=6875,
-    help="Port number at which the " "postgres instance is listening.",
+    help="Port number at which the materialized instance is listening.",
     envvar="PGPORT",
     type=click.INT,
 )
@@ -1099,10 +1099,10 @@ class PGCli(object):
     "-U",
     "--username",
     "username_opt",
-    help="Username to connect to the postgres database.",
+    help="Username to connect to the materialize database.",
 )
 @click.option(
-    "-u", "--user", "username_opt", help="Username to connect to the postgres database."
+    "-u", "--user", "username_opt", help="Username to connect to the materialize database."
 )
 @click.option(
     "-W",
