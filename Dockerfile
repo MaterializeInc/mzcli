@@ -22,4 +22,4 @@ RUN apt-get update -o Acquire::Languages=none \
         /root/.cache/pip/ \
     ;
 
-CMD ["mzcli", "host=materialized port=6875 sslmode=disable"]
+CMD ["mzcli", "host=materialized port=6875 dbname=materialize"]
