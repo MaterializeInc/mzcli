@@ -6,7 +6,7 @@ GitHub Workflow
 ---------------
 
 If you're interested in contributing to mzcli, first of all my heart felt
-thanks. `Fork the project <https://github.com/dbcli/mzcli>`_ on github.  Then
+thanks. `Fork the project <https://github.com/MaterializeInc/mzcli>`_ on github.  Then
 clone your fork into your computer (``git clone <url-for-your-fork>``).  Make
 the changes and create the commits in your local machine. Then push those
 changes to your fork. Then click on the pull request icon on github and create
@@ -20,11 +20,11 @@ repo.
 
 ::
 
-   $ git remote add upstream git@github.com:dbcli/mzcli.git
+   $ git remote add upstream git@github.com:MaterializeInc/mzcli.git
 
 Once the 'upstream' end point is added you can then periodically do a ``git
-pull upstream master`` to update your local copy and then do a ``git push
-origin master`` to keep your own fork up to date.
+pull upstream main`` to update your local copy and then do a ``git push
+origin main`` to keep your own fork up to date.
 
 Check Github's `Understanding the GitHub flow guide
 <https://guides.github.com/introduction/flow/>`_ for a more detailed
@@ -170,7 +170,9 @@ Troubleshooting the integration tests
 - Make sure postgres instance on localhost is running
 - Check your ``pg_hba.conf`` file to verify local connections are enabled
 - Check `this issue <https://github.com/dbcli/mzcli/issues/945>`_ for relevant information.
-- Contact us on `gitter <https://gitter.im/dbcli/mzcli/>`_ or `file an issue <https://github.com/dbcli/mzcli/issues/new>`_.
+
+- Contact us on `slack <https://bit.ly/MTLZ-slack>`_ or `file an issue
+  <https://github.com/MaterializeInc/mzcli/issues/new>`_.
 
 Coding Style
 ------------
