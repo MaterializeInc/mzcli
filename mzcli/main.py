@@ -732,10 +732,10 @@ class PGCli(object):
         self.prompt_app = self._build_cli(history)
 
         if not self.less_chatty:
-            print("Server: materialized", self.pgexecute.server_version)
-            print("Version:", __version__)
+            print("mzcli Version:", __version__)
             print("Chat: https://bit.ly/MTLZ-slack")
             print("Home: https://materialize.io")
+            print("Many thanks to the dbcli community https://www.dbcli.com/")
 
         try:
             while True:

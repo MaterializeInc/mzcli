@@ -9,14 +9,14 @@ try:
 except ImportError:
     setproctitle = None
 
-from pgcli.main import (
+from mzcli.main import (
     obfuscate_process_password,
     format_output,
     PGCli,
     OutputSettings,
     COLOR_CODE_REGEX,
 )
-from pgcli.pgexecute import PGExecute
+from mzcli.pgexecute import PGExecute
 from pgspecial.main import PAGER_OFF, PAGER_LONG_OUTPUT, PAGER_ALWAYS
 from utils import dbtest, run
 from collections import namedtuple

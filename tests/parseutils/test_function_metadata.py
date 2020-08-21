@@ -1,4 +1,4 @@
-from pgcli.packages.parseutils.meta import FunctionMetadata
+from mzcli.packages.parseutils.meta import FunctionMetadata
 
 
 def test_function_metadata_eq():

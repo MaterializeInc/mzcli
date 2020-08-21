@@ -5,7 +5,7 @@ _pg_databases()
     COMPREPLY=( $( compgen -W "$( psql -AtqwlF $'\t' 2>/dev/null | \
 	    awk 'NF > 1 { print $1 }' )" -- "$cur" ) )
 }
-                                                                                                               
+
 _pg_users()
 {
     # -w was introduced in 8.4, https://launchpad.net/bugs/164772
@@ -13,12 +13,12 @@ _pg_users()
         template1 2>/dev/null )" -- "$cur" ) )
     [[ ${#COMPREPLY[@]} -eq 0 ]] && COMPREPLY=( $( compgen -u -- "$cur" ) )
 }
-  
-_pgcli()
+
+_mzcli()
 {
     local cur prev words cword
     _init_completion -s || return
-	
+
     case $prev in
         -h|--host)
             _known_hosts_real "$cur"
@@ -42,7 +42,7 @@ _pgcli()
 	    --*)
         	# return list of available options
        		COMPREPLY=( $( compgen -W '--host --port --user --password --no-password
- 			              --single-connection --version --dbname --pgclirc --dsn
+ 			              --single-connection --version --dbname --mzclirc --dsn
   			            --row-limit --help' -- "$cur" ) )
         [[ $COMPREPLY == *= ]] && compopt -o nospace
 		    return 0
@@ -55,7 +55,7 @@ _pgcli()
 		    ;;
 	    *)
             # return list of available databases
-        	_pg_databases 
+        	_pg_databases
     esac
-} && 
-complete -F _pgcli pgcli
+} &&
+complete -F _mzcli mzcli

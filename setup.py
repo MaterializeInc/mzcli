@@ -1,9 +1,9 @@
 import platform
 from setuptools import setup, find_packages
 
-from pgcli import __version__
+from mzcli import __version__
 
-description = "CLI for the Materialize streaming view engine. With auto-completion and syntax highlighting."
+description = "CLI for the Materialize streaming database. With auto-completion and syntax highlighting."
 
 install_requirements = [
     "pgspecial>=1.11.8",
@@ -28,12 +28,12 @@ if platform.system() != "Windows" and not platform.system().startswith("CYGWIN")
 setup(
     name="mzcli",
     author="Pgcli Core Team + The Materialize developers",
-    author_email="pgcli-dev@googlegroups.com",
+    author_email="bugs@materialize.io",
     version=__version__,
     license="BSD",
-    url="http://mtrlz.dev",
+    url="https://materialize.io",
     packages=find_packages(),
-    package_data={"pgcli": ["mzclirc", "packages/pgliterals/pgliterals.json"]},
+    package_data={"mzcli": ["mzclirc", "packages/pgliterals/pgliterals.json"]},
     description=description,
     long_description=open("README.rst").read(),
     install_requires=install_requirements,
@@ -41,7 +41,7 @@ setup(
     python_requires=">=3.6",
     entry_points="""
         [console_scripts]
-        mzcli=pgcli.main:cli
+        mzcli=mzcli.main:cli
     """,
     classifiers=[
         "Intended Audience :: Developers",

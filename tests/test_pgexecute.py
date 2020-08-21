@@ -6,8 +6,8 @@ from mock import patch, MagicMock
 from pgspecial.main import PGSpecial, NO_QUERY
 from utils import run, dbtest, requires_json, requires_jsonb
 
-from pgcli.main import PGCli
-from pgcli.packages.parseutils.meta import FunctionMetadata
+from mzcli.main import PGCli
+from mzcli.packages.parseutils.meta import FunctionMetadata
 
 
 def function_meta_data(

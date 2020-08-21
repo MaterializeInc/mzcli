@@ -1,7 +1,7 @@
 import pytest
 from mock import Mock
 
-from pgcli.main import PGCli
+from mzcli.main import PGCli
 
 
 # We need this fixtures beacause we need PGCli object to be created

@@ -5,7 +5,7 @@ from mock import Mock, patch
 
 @pytest.fixture
 def refresher():
-    from pgcli.completion_refresher import CompletionRefresher
+    from mzcli.completion_refresher import CompletionRefresher
 
     return CompletionRefresher()
 

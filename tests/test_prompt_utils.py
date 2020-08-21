@@ -1,6 +1,6 @@
 import click
 
-from pgcli.packages.prompt_utils import confirm_destructive_query
+from mzcli.packages.prompt_utils import confirm_destructive_query
 
 
 def test_confirm_destructive_query_notty():
