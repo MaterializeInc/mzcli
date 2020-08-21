@@ -27,28 +27,28 @@ from collections import namedtuple
 def test_obfuscate_process_password():
     original_title = setproctitle.getproctitle()
 
-    setproctitle.setproctitle("pgcli user=root password=secret host=localhost")
+    setproctitle.setproctitle("mzcli user=root password=secret host=localhost")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "pgcli user=root password=xxxx host=localhost"
+    expected = "mzcli user=root password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("pgcli user=root password=top secret host=localhost")
+    setproctitle.setproctitle("mzcli user=root password=top secret host=localhost")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "pgcli user=root password=xxxx host=localhost"
+    expected = "mzcli user=root password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("pgcli user=root password=top secret")
+    setproctitle.setproctitle("mzcli user=root password=top secret")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "pgcli user=root password=xxxx"
+    expected = "mzcli user=root password=xxxx"
     assert title == expected
 
-    setproctitle.setproctitle("pgcli postgres://root:secret@localhost/db")
+    setproctitle.setproctitle("mzcli postgres://root:secret@localhost/db")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "pgcli postgres://root:xxxx@localhost/db"
+    expected = "mzcli postgres://root:xxxx@localhost/db"
     assert title == expected
 
     setproctitle.setproctitle(original_title)
@@ -182,8 +182,8 @@ test_ids = [
 def pset_pager_mocks():
     cli = PGCli()
     cli.watch_command = None
-    with mock.patch("pgcli.main.click.echo") as mock_echo, mock.patch(
-        "pgcli.main.click.echo_via_pager"
+    with mock.patch("mzcli.main.click.echo") as mock_echo, mock.patch(
+        "mzcli.main.click.echo_via_pager"
     ) as mock_echo_via_pager, mock.patch.object(cli, "prompt_app") as mock_app:
 
         yield cli, mock_echo, mock_echo_via_pager, mock_app
@@ -285,7 +285,7 @@ def test_quoted_db_uri(tmpdir):
 def test_pg_service_file(tmpdir):
 
     with mock.patch.object(PGCli, "connect") as mock_connect:
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         with open(tmpdir.join(".pg_service.conf").strpath, "w") as service_conf:
             service_conf.write(
                 """[myservice]
@@ -314,7 +314,7 @@ def test_pg_service_file(tmpdir):
 
     with mock.patch.object(PGExecute, "__init__") as mock_pgexecute:
         mock_pgexecute.return_value = None
-        cli = PGCli(pgclirc_file=str(tmpdir.join("rcfile")))
+        cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         os.environ["PGPASSWORD"] = "very_secure"
         cli.connect_service("my_other_service", None)
     mock_pgexecute.assert_called_with(
@@ -379,5 +379,5 @@ def test_application_name_db_uri(tmpdir):
         cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         cli.connect_uri("postgres://bar@baz.com/?application_name=cow")
     mock_pgexecute.assert_called_with(
-        "bar", "bar", "", "baz.com", "", "", application_name="cow"
+        "materialize", "bar", "", "baz.com", "6875", "", application_name="cow"
     )
