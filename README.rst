@@ -122,6 +122,7 @@ slack`_.
 
 .. _community slack: https://join.slack.com/t/materializecommunity/shared_invite/zt-fpfvczj5-efOE_8qvM4fWpHSvMxpKbA
 
+
 ..
   Detailed Installation Instructions:
   -----------------------------------
@@ -207,6 +208,8 @@ slack`_.
   ::
 
       $ sudo pip install mzcli
+
+  mzcli only runs on Python3.6+.
 
 
   Docker
@@ -313,9 +316,6 @@ slack`_.
   ::
 
       In [3]: my_result = _
-
-Pgcli only runs on Python3.6+ since 2.2.0, if you use an old version of Python,
-you should use install ``mzcli <= 2.2.0``.
 
   Thanks:
   -------
