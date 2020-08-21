@@ -471,7 +471,7 @@ class PGCli(object):
             try:
                 keyring = importlib.import_module("keyring")
             except Exception as e:  # ImportError for Python 2, ModuleNotFoundError for Python 3
-                self.logger.warning("import keyring failed: %r.", e)
+                self.logger.debug("import keyring failed: %r.", e)
 
     def connect_dsn(self, dsn, **kwargs):
         self.logger.debug("connecting via dsn: %s (%s)", dsn, kwargs)
@@ -732,7 +732,6 @@ class PGCli(object):
         self.prompt_app = self._build_cli(history)
 
         if not self.less_chatty:
-            print("mzcli Version:", __version__)
             print("Chat: https://bit.ly/MTLZ-slack")
             print("Home: https://materialize.io")
             print("Many thanks to the dbcli community https://www.dbcli.com/")
