@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 
 import pygments.styles
@@ -36,6 +34,10 @@ TOKEN_TO_PROMPT_STYLE = {
     Token.Output.Header: "output.header",
     Token.Output.OddRow: "output.odd-row",
     Token.Output.EvenRow: "output.even-row",
+    Token.Output.Null: "output.null",
+    Token.Literal.String: "literal.string",
+    Token.Literal.Number: "literal.number",
+    Token.Keyword: "keyword",
 }
 
 # reverse dict for cli_helpers, because they still expect Pygments tokens.
@@ -54,7 +56,7 @@ def parse_pygments_style(token_name, style_object, style_dict):
     try:
         other_token_type = string_to_tokentype(style_dict[token_name])
         return token_type, style_object.styles[other_token_type]
-    except AttributeError as err:
+    except AttributeError:
         return token_type, style_dict[token_name]
 
 

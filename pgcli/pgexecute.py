@@ -9,7 +9,6 @@ import pgspecial as special
 import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE, make_dsn
 from .packages.parseutils.meta import FunctionMetadata, ForeignKey
-from .encodingutils import unicode2utf8, PY2, utf8tounicode
 
 _logger = logging.getLogger(__name__)
 
@@ -202,7 +201,7 @@ class PGExecute(object):
         host=None,
         port=None,
         dsn=None,
-        **kwargs
+        **kwargs,
     ):
         self._conn_params = {}
         self.conn = None
@@ -220,19 +219,6 @@ class PGExecute(object):
         """Returns a clone of the current executor."""
         return self.__class__(**self._conn_params)
 
-    def get_server_version(self, cursor):
-        _logger.debug("Version Query. sql: %r", self.version_query)
-        cursor.execute(self.version_query)
-        result = cursor.fetchone()
-        server_version = ""
-        if result:
-            # full version string looks like this:
-            # PostgreSQL 10.3 on x86_64-apple-darwin17.3.0, compiled by Apple LLVM version 9.0.0 (clang-900.0.39.2), 64-bit  # noqa
-            # let's only retrieve version number
-            version_parts = result[0].split()
-            server_version = version_parts[1]
-        return server_version
-
     def connect(
         self,
         database=None,
@@ -241,7 +227,7 @@ class PGExecute(object):
         host=None,
         port=None,
         dsn=None,
-        **kwargs
+        **kwargs,
     ):
 
         conn_params = self._conn_params.copy()
@@ -264,7 +250,7 @@ class PGExecute(object):
                     new_params["dsn"], password=new_params.pop("password")
                 )
 
-        conn_params.update({k: unicode2utf8(v) for k, v in new_params.items() if v})
+        conn_params.update({k: v for k, v in new_params.items() if v})
 
         conn = psycopg2.connect(**conn_params)
         cursor = conn.cursor()
@@ -279,14 +265,32 @@ class PGExecute(object):
         # When we connect using a DSN, we don't really know what db,
         # user, etc. we connected to. Let's read it.
         # Note: moved this after setting autocommit because of #664.
-        # TODO: use actual connection info from psycopg2.extensions.Connection.info as psycopg>2.8 is available and required dependency  # noqa
-        dsn_parameters = conn.get_dsn_parameters()
+        libpq_version = psycopg2.__libpq_version__
+        dsn_parameters = {}
+        if libpq_version >= 93000:
+            # use actual connection info from psycopg2.extensions.Connection.info
+            # as libpq_version > 9.3 is available and required dependency
+            dsn_parameters = conn.info.dsn_parameters
+        else:
+            try:
+                dsn_parameters = conn.get_dsn_parameters()
+            except Exception as x:
+                # https://github.com/dbcli/pgcli/issues/1110
+                # PQconninfo not available in libpq < 9.3
+                _logger.info("Exception in get_dsn_parameters: %r", x)
 
-        self.dbname = dsn_parameters.get("dbname")
-        self.user = dsn_parameters.get("user")
+        if dsn_parameters:
+            self.dbname = dsn_parameters.get("dbname")
+            self.user = dsn_parameters.get("user")
+            self.host = dsn_parameters.get("host")
+            self.port = dsn_parameters.get("port")
+        else:
+            self.dbname = conn_params.get("database")
+            self.user = conn_params.get("user")
+            self.host = conn_params.get("host")
+            self.port = conn_params.get("port")
+
         self.password = password
-        self.host = dsn_parameters.get("host")
-        self.port = dsn_parameters.get("port")
         self.extra_args = kwargs
 
         if not self.host:
@@ -335,10 +339,7 @@ class PGExecute(object):
         See http://initd.org/psycopg/docs/connection.html#connection.encoding
         """
 
-        if PY2:
-            return json_data.decode(self.conn.encoding)
-        else:
-            return json_data
+        return json_data
 
     def failed_transaction(self):
         status = self.conn.get_transaction_status()
@@ -379,9 +380,9 @@ class PGExecute(object):
         for sql in sqlparse.split(statement):
             # Remove spaces, eol and semi-colons.
             sql = sql.rstrip(";")
+            sql = sqlparse.format(sql, strip_comments=True).strip()
             if not sql:
                 continue
-
             try:
                 if pgspecial:
                     # \G is treated specially since we have to set the expanded output.
@@ -451,8 +452,7 @@ class PGExecute(object):
         # conn.notices persist between queies, we use pop to clear out the list
         title = ""
         while len(self.conn.notices) > 0:
-            title = utf8tounicode(self.conn.notices.pop()) + title
-        _logger.debug("cleared title %s", title)
+            title = self.conn.notices.pop() + title
 
         # cur.description will be None for operations that do not return
         # rows.
@@ -505,11 +505,13 @@ class PGExecute(object):
         # materialize only has one schema and it is the empty schema
         return [""]
 
-    def _relations(self, kinds=("r", "v", "m")):
+    def _relations(self, kinds=("r", "p", "f", "v", "m")):
         """Get table or view name metadata
 
         :param kinds: list of postgres relkind filters:
                 'r' - table
+                'p' - partitioned table
+                'f' - foreign table
                 'v' - view
                 'm' - materialized view
         :return: (schema_name, rel_name) tuples
@@ -534,7 +536,7 @@ class PGExecute(object):
 
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
-        for row in self._relations(kinds=["r"]):
+        for row in self._relations(kinds=["r", "p", "f"]):
             yield row
 
     def views(self):
@@ -545,11 +547,13 @@ class PGExecute(object):
         for row in self._relations(kinds=["v"]):
             yield row
 
-    def _columns(self, kinds=("r", "v", "m")):
+    def _columns(self, kinds=("r", "p", "f", "v", "m")):
         """Get column metadata for tables and views
 
         :param kinds: kinds: list of postgres relkind filters:
                 'r' - table
+                'p' - partitioned table
+                'f' - foreign table
                 'v' - view
                 'm' - materialized view
         :return: list of (schema_name, relation_name, column_name, column_type, has_default, default) tuples
@@ -565,7 +569,7 @@ class PGExecute(object):
                     yield ("", tbl, column[0], column[2], False, None)
 
     def table_columns(self):
-        for row in self._columns(kinds=["r"]):
+        for row in self._columns(kinds=["r", "p", "f"]):
             yield row
 
     def view_columns(self):

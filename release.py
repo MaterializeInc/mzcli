@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """A script to publish a release of pgcli to PyPI."""
 
-from __future__ import print_function
 import io
 from optparse import OptionParser
 import re
@@ -36,11 +35,11 @@ def run_step(*args):
     global DRY_RUN
 
     cmd = args
-    print (" ".join(cmd))
+    print(" ".join(cmd))
     if skip_step():
-        print ("--- Skipping...")
+        print("--- Skipping...")
     elif DRY_RUN:
-        print ("--- Pretending to run...")
+        print("--- Pretending to run...")
     else:
         subprocess.check_output(cmd)
 
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     checklist(checks)
 
     ver = version("pgcli/__init__.py")
-    print ("Releasing Version:", ver)
+    print("Releasing Version:", ver)
 
     parser = OptionParser()
     parser.add_option(

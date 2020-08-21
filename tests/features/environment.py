@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
-
 import copy
 import os
 import sys
@@ -23,14 +20,15 @@ def before_all(context):
     os.environ["PAGER"] = "cat"
     os.environ["EDITOR"] = "ex"
     os.environ["VISUAL"] = "ex"
+    os.environ["PROMPT_TOOLKIT_NO_CPR"] = "1"
 
     context.package_root = os.path.abspath(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     )
     fixture_dir = os.path.join(context.package_root, "tests/features/fixture_data")
 
-    print ("package root:", context.package_root)
-    print ("fixture dir:", fixture_dir)
+    print("package root:", context.package_root)
+    print("fixture dir:", fixture_dir)
 
     os.environ["COVERAGE_PROCESS_START"] = os.path.join(
         context.package_root, ".coveragerc"
@@ -123,14 +121,14 @@ def before_all(context):
 
 def show_env_changes(env_old, env_new):
     """Print out all test-specific env values."""
-    print ("--- os.environ changed values: ---")
+    print("--- os.environ changed values: ---")
     all_keys = set(list(env_old.keys()) + list(env_new.keys()))
     for k in sorted(all_keys):
         old_value = env_old.get(k, "")
         new_value = env_new.get(k, "")
         if new_value and old_value != new_value:
-            print ('{}="{}"'.format(k, new_value))
-    print ("-" * 20)
+            print('{}="{}"'.format(k, new_value))
+    print("-" * 20)
 
 
 def after_all(context):
@@ -181,7 +179,7 @@ def after_scenario(context, scenario):
         try:
             context.cli.expect_exact(pexpect.EOF, timeout=15)
         except pexpect.TIMEOUT:
-            print ("--- after_scenario {}: kill cli".format(scenario.name))
+            print("--- after_scenario {}: kill cli".format(scenario.name))
             context.cli.kill(signal.SIGKILL)
     if hasattr(context, "tmpfile_sql_help") and context.tmpfile_sql_help:
         context.tmpfile_sql_help.close()

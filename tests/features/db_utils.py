@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from __future__ import print_function
-
 from psycopg2 import connect
 from psycopg2.extensions import AsIs
 
@@ -48,7 +44,7 @@ def create_cn(hostname, password, username, dbname, port):
         host=hostname, user=username, database=dbname, password=password, port=port
     )
 
-    print ("Created connection: {0}.".format(cn.dsn))
+    print("Created connection: {0}.".format(cn.dsn))
     return cn
 
 
@@ -79,4 +75,4 @@ def close_cn(cn=None):
     """
     if cn:
         cn.close()
-        print ("Closed connection: {0}.".format(cn.dsn))
+        print("Closed connection: {0}.".format(cn.dsn))

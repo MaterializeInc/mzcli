@@ -1,27 +1,20 @@
-import re
-import ast
 import platform
 from setuptools import setup, find_packages
 
-_version_re = re.compile(r"__version__\s+=\s+(.*)")
-
-with open("pgcli/__init__.py", "rb") as f:
-    version = str(
-        ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
-    )
+from pgcli import __version__
 
 description = "CLI for the Materialize streaming view engine. With auto-completion and syntax highlighting."
 
 install_requirements = [
-    "pgspecial>=1.11.5",
+    "pgspecial>=1.11.8",
     "click >= 4.1",
     "Pygments >= 2.0",  # Pygments has to be Capitalcased. WTF?
-    "prompt_toolkit>=2.0.6,<2.1.0",
-    "psycopg2 >= 2.7.4",
+    "prompt_toolkit>=2.0.6,<4.0.0",
+    "psycopg2 >= 2.8",
     "sqlparse >=0.3.0,<0.4",
     "configobj >= 5.0.6",
-    "humanize >= 0.5.1",
-    "cli_helpers[styles] >= 1.2.0",
+    "pendulum>=2.1.0",
+    "cli_helpers[styles] >= 2.0.0",
 ]
 
 
@@ -36,7 +29,7 @@ setup(
     name="mzcli",
     author="Pgcli Core Team + The Materialize developers",
     author_email="pgcli-dev@googlegroups.com",
-    version=version,
+    version=__version__,
     license="BSD",
     url="http://mtrlz.dev",
     packages=find_packages(),
@@ -45,6 +38,7 @@ setup(
     long_description=open("README.rst").read(),
     install_requires=install_requirements,
     extras_require={"keyring": ["keyring >= 12.2.0"]},
+    python_requires=">=3.6",
     entry_points="""
         [console_scripts]
         mzcli=pgcli.main:cli
@@ -54,13 +48,10 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: Unix",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: SQL",
         "Topic :: Database",
         "Topic :: Database :: Front-Ends",

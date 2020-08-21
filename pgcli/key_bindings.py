@@ -1,13 +1,15 @@
-from __future__ import unicode_literals
-
 import logging
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.filters import (
     completion_is_selected,
+    is_searching,
     has_completions,
     has_selection,
+    vi_mode,
 )
+
+from .pgbuffer import buffer_should_be_handled
 
 _logger = logging.getLogger(__name__)
 
@@ -89,12 +91,24 @@ def pgcli_bindings(pgcli):
         (accept current selection).
 
         """
-        _logger.debug("Detected enter key.")
+        _logger.debug("Detected enter key during completion selection.")
 
         event.current_buffer.complete_state = None
         event.app.current_buffer.complete_state = None
 
-    @kb.add("escape", "enter")
+    # When using multi_line input mode the buffer is not handled on Enter (a new line is
+    # inserted instead), so we force the handling if we're not in a completion or
+    # history search, and one of several conditions are True
+    @kb.add(
+        "enter",
+        filter=~(completion_is_selected | is_searching)
+        & buffer_should_be_handled(pgcli),
+    )
+    def _(event):
+        _logger.debug("Detected enter key.")
+        event.current_buffer.validate_and_handle()
+
+    @kb.add("escape", "enter", filter=~vi_mode)
     def _(event):
         """Introduces a line break regardless of multi-line mode or not."""
         _logger.debug("Detected alt-enter key.")

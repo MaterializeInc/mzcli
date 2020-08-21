@@ -1,8 +1,8 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-
+import platform
 import warnings
+from os.path import expanduser
 
+from configobj import ConfigObj
 from pgspecial.namedqueries import NamedQueries
 
 warnings.filterwarnings("ignore", category=UserWarning, module="psycopg2")
@@ -15,9 +15,10 @@ import logging
 import threading
 import shutil
 import functools
-import humanize
+import pendulum
 import datetime as dt
 import itertools
+import platform
 from time import time, sleep
 from codecs import open
 
@@ -36,6 +37,7 @@ from prompt_toolkit.enums import DEFAULT_BUFFER, EditingMode
 from prompt_toolkit.shortcuts import PromptSession, CompleteStyle
 from prompt_toolkit.document import Document
 from prompt_toolkit.filters import HasFocus, IsDone
+from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.lexers import PygmentsLexer
 from prompt_toolkit.layout.processors import (
     ConditionalProcessor,
@@ -53,7 +55,6 @@ from .pgcompleter import PGCompleter
 from .pgtoolbar import create_toolbar_tokens_func
 from .pgstyle import style_factory, style_factory_output
 from .pgexecute import PGExecute
-from .pgbuffer import pg_is_multiline
 from .completion_refresher import CompletionRefresher
 from .config import (
     get_casing_file,
@@ -63,8 +64,6 @@ from .config import (
     get_config,
 )
 from .key_bindings import pgcli_bindings
-from .encodingutils import utf8tounicode
-from .encodingutils import text_type
 from .packages.prompt_utils import confirm_destructive_query
 from .__init__ import __version__
 
@@ -133,14 +132,13 @@ class PGCli(object):
 
         if configured_pager:
             self.logger.info(
-                'Default pager found in config file: "{}"'.format(configured_pager)
+                'Default pager found in config file: "%s"', configured_pager
             )
             os.environ["PAGER"] = configured_pager
         elif os_environ_pager:
             self.logger.info(
-                'Default pager found in PAGER environment variable: "{}"'.format(
-                    os_environ_pager
-                )
+                'Default pager found in PAGER environment variable: "%s"',
+                os_environ_pager,
             )
             os.environ["PAGER"] = os_environ_pager
         else:
@@ -217,6 +215,7 @@ class PGCli(object):
         self.decimal_format = c["data_formats"]["decimal"]
         self.float_format = c["data_formats"]["float"]
         self.initialize_keyring()
+        self.show_bottom_toolbar = c["main"].as_bool("show_bottom_toolbar")
 
         self.pgspecial.pset_pager(
             self.config["main"].as_bool("enable_pager") and "on" or "off"
@@ -364,7 +363,7 @@ class PGCli(object):
                     user=user,
                     host=host,
                     port=port,
-                    **self.pgexecute.extra_args
+                    **self.pgexecute.extra_args,
                 )
             except OperationalError as e:
                 click.secho(str(e), err=True, fg="red")
@@ -478,6 +477,21 @@ class PGCli(object):
         self.logger.debug("connecting via dsn: %s (%s)", dsn, kwargs)
         self.connect(dsn=dsn, **kwargs)
 
+    def connect_service(self, service, user):
+        service_config, file = parse_service_info(service)
+        if service_config is None:
+            click.secho(
+                "service '%s' was not found in %s" % (service, file), err=True, fg="red"
+            )
+            exit(1)
+        self.connect(
+            database=service_config.get("dbname"),
+            host=service_config.get("host"),
+            user=user or service_config.get("user"),
+            port=service_config.get("port"),
+            passwd=service_config.get("password"),
+        )
+
     def connect_uri(self, uri):
         self.logger.debug("connecting via uri: %s", uri)
         kwargs = psycopg2.extensions.parse_dsn(uri)
@@ -544,7 +558,7 @@ class PGCli(object):
             # fails. Don't prompt if the -w flag is supplied
             if self.never_passwd_prompt:
                 return False
-            error_msg = utf8tounicode(exc.args[0])
+            error_msg = exc.args[0]
             if "no password supplied" in error_msg:
                 return True
             if "password authentication failed" in error_msg:
@@ -671,24 +685,25 @@ class PGCli(object):
                     except IOError as e:
                         click.secho(str(e), err=True, fg="red")
                 else:
-                    self.echo_via_pager("\n".join(output))
+                    if output:
+                        self.echo_via_pager("\n".join(output))
             except KeyboardInterrupt:
                 pass
 
             if self.pgspecial.timing_enabled:
                 # Only add humanized time display if > 1 second
                 if query.total_time > 1:
-                    print (
+                    print(
                         "Time: %0.03fs (%s), executed in: %0.03fs (%s)"
                         % (
                             query.total_time,
-                            humanize.time.naturaldelta(query.total_time),
+                            pendulum.Duration(seconds=query.total_time).in_words(),
                             query.execution_time,
-                            humanize.time.naturaldelta(query.execution_time),
+                            pendulum.Duration(seconds=query.execution_time).in_words(),
                         )
                     )
                 else:
-                    print ("Time: %0.03fs" % query.total_time)
+                    print("Time: %0.03fs" % query.total_time)
 
             # Check if we need to update completions, in order of most
             # to least drastic changes
@@ -715,6 +730,12 @@ class PGCli(object):
         self.refresh_completions(history=history, persist_priorities="none")
 
         self.prompt_app = self._build_cli(history)
+
+        if not self.less_chatty:
+            print("Server: materialized", self.pgexecute.server_version)
+            print("Version:", __version__)
+            print("Chat: https://bit.ly/MTLZ-slack")
+            print("Home: https://materialize.io")
 
         try:
             while True:
@@ -758,7 +779,7 @@ class PGCli(object):
 
         except (PgCliQuitError, EOFError):
             if not self.less_chatty:
-                print ("Goodbye!")
+                print("Goodbye!")
 
     def _build_cli(self, history):
         key_bindings = pgcli_bindings(self)
@@ -808,7 +829,7 @@ class PGCli(object):
                 reserve_space_for_menu=self.min_num_menu_lines,
                 message=get_message,
                 prompt_continuation=get_continuation,
-                bottom_toolbar=get_toolbar_tokens,
+                bottom_toolbar=get_toolbar_tokens if self.show_bottom_toolbar else None,
                 complete_style=complete_style,
                 input_processors=[
                     # Highlight matching brackets while editing.
@@ -821,7 +842,11 @@ class PGCli(object):
                 ],
                 auto_suggest=AutoSuggestFromHistory(),
                 tempfile_suffix=".sql",
-                multiline=pg_is_multiline(self),
+                # N.b. pgcli's multi-line mode controls submit-on-Enter (which
+                # overrides the default behaviour of prompt_toolkit) and is
+                # distinct from prompt_toolkit's multiline mode here, which
+                # controls layout/display of the prompt/buffer
+                multiline=True,
                 history=history,
                 completer=ThreadedCompleter(DynamicCompleter(lambda: self.completer)),
                 complete_while_typing=True,
@@ -1066,6 +1091,8 @@ class PGCli(object):
     def echo_via_pager(self, text, color=None):
         if self.pgspecial.pager_config == PAGER_OFF or self.watch_command:
             click.echo(text, color=color)
+        elif "pspg" in os.environ.get("PAGER", "") and self.table_format == "csv":
+            click.echo_via_pager(text, color)
         elif self.pgspecial.pager_config == PAGER_LONG_OUTPUT:
             lines = text.split("\n")
 
@@ -1208,7 +1235,7 @@ def cli(
     warn,
 ):
     if version:
-        print ("Version:", __version__)
+        print("Version:", __version__)
         sys.exit(0)
 
     config_dir = os.path.dirname(config_location())
@@ -1260,7 +1287,11 @@ def cli(
         username = dbname
     database = dbname_opt or dbname or "materialize"
     user = username_opt or username
-
+    service = None
+    if database.startswith("service="):
+        service = database[8:]
+    elif os.getenv("PGSERVICE") is not None:
+        service = os.getenv("PGSERVICE")
     # because option --list or -l are not supposed to have a db name
     if list_databases:
         database = "postgres"
@@ -1269,7 +1300,15 @@ def cli(
         try:
             cfg = load_config(mzclirc, config_full_path)
             dsn_config = cfg["alias_dsn"][dsn]
-        except:
+        except KeyError:
+            click.secho(
+                f"Could not find a DSN with alias {dsn}. "
+                'Please check the "[alias_dsn]" section in pgclirc.',
+                err=True,
+                fg="red",
+            )
+            exit(1)
+        except Exception:
             click.secho(
                 "Invalid DSNs found in the config file. "
                 'Please check the "[alias_dsn]" section in mzclirc.',
@@ -1281,10 +1320,10 @@ def cli(
         pgcli.dsn_alias = dsn
     elif "://" in database:
         pgcli.connect_uri(database)
-    elif "=" in database:
+    elif "=" in database and service is None:
         pgcli.connect_dsn(database, user=user)
-    elif os.environ.get("PGSERVICE", None):
-        pgcli.connect_dsn("service={0}".format(os.environ["PGSERVICE"]))
+    elif service is not None:
+        pgcli.connect_service(service, user)
     else:
         pgcli.connect(database, host, user, port)
 
@@ -1372,7 +1411,7 @@ def is_select(status):
 
 
 def exception_formatter(e):
-    return click.style(utf8tounicode(str(e)), fg="red")
+    return click.style(str(e), fg="red")
 
 
 def format_output(title, cur, headers, status, settings):
@@ -1388,7 +1427,7 @@ def format_output(title, cur, headers, status, settings):
             return settings.missingval
         if not isinstance(val, list):
             return val
-        return "{" + ",".join(text_type(format_array(e)) for e in val) + "}"
+        return "{" + ",".join(str(format_array(e)) for e in val) + "}"
 
     def format_arrays(data, headers, **_):
         data = list(data)
@@ -1414,11 +1453,19 @@ def format_output(title, cur, headers, status, settings):
     if not settings.floatfmt:
         output_kwargs["preprocessors"] = (align_decimals,)
 
+    if table_format == "csv":
+        # The default CSV dialect is "excel" which is not handling newline values correctly
+        # Nevertheless, we want to keep on using "excel" on Windows since it uses '\r\n'
+        # as the line terminator
+        # https://github.com/dbcli/pgcli/issues/1102
+        dialect = "excel" if platform.system() == "Windows" else "unix"
+        output_kwargs["dialect"] = dialect
+
     if title:  # Only print the title if it's not None.
         output.append(title)
 
     if cur:
-        headers = [case_function(utf8tounicode(x)) for x in headers]
+        headers = [case_function(x) for x in headers]
         if max_width is not None:
             cur = list(cur)
         column_types = None
@@ -1436,10 +1483,10 @@ def format_output(title, cur, headers, status, settings):
                 ):
                     column_types.append(int)
                 else:
-                    column_types.append(text_type)
+                    column_types.append(str)
 
         formatted = formatter.format_output(cur, headers, **output_kwargs)
-        if isinstance(formatted, (text_type)):
+        if isinstance(formatted, str):
             formatted = iter(formatted.splitlines())
         first_line = next(formatted)
         formatted = itertools.chain([first_line], formatted)
@@ -1447,15 +1494,37 @@ def format_output(title, cur, headers, status, settings):
             formatted = formatter.format_output(
                 cur, headers, format_name="vertical", column_types=None, **output_kwargs
             )
-            if isinstance(formatted, (text_type)):
+            if isinstance(formatted, str):
                 formatted = iter(formatted.splitlines())
 
         output = itertools.chain(output, formatted)
 
-    if status:  # Only print the status if it's not None.
+    # Only print the status if it's not None and we are not producing CSV
+    if status and table_format != "csv":
         output = itertools.chain(output, [status])
 
     return output
+
+
+def parse_service_info(service):
+    service = service or os.getenv("PGSERVICE")
+    service_file = os.getenv("PGSERVICEFILE")
+    if not service_file:
+        # try ~/.pg_service.conf (if that exists)
+        if platform.system() == "Windows":
+            service_file = os.getenv("PGSYSCONFDIR") + "\\pg_service.conf"
+        elif os.getenv("PGSYSCONFDIR"):
+            service_file = os.path.join(os.getenv("PGSYSCONFDIR"), ".pg_service.conf")
+        else:
+            service_file = expanduser("~/.pg_service.conf")
+    if not service:
+        # nothing to do
+        return None, service_file
+    service_file_config = ConfigObj(service_file)
+    if service not in service_file_config:
+        return None, service_file
+    service_conf = service_file_config.get(service)
+    return service_conf, service_file
 
 
 if __name__ == "__main__":

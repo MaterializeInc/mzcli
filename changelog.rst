@@ -1,18 +1,76 @@
-Upcoming:
-=========
+TBD
+===
+
+Features:
+---------
+
+* Make the output more compact by removing the empty newline. (Thanks: `laixintao`_)
+* Add support for using [pspg](https://github.com/okbob/pspg) as a pager (#1102)
+* Update python version in Dockerfile
+* Support setting color for null, string, number, keyword value
+* Support Prompt Toolkit 2
+* Update functions, datatypes literals for auto-suggestion field
+
+Bug fixes:
+----------
+
+* Minor typo fixes in `pgclirc`. (Thanks: `anthonydb`_)
+* Fix for list index out of range when executing commands from a file (#1193). (Thanks: `Irina Truong`_)
+* Move from `humanize` to `pendulum` for displaying query durations (#1015)
+* More explicit error message when connecting using DSN alias and it is not found.
+
+3.0.0
+=====
+
+Features:
+---------
+
+* Add `__main__.py` file to execute pgcli as a package directly (#1123).
+* Add support for ANSI escape sequences for coloring the prompt (#1122).
+* Add support for partitioned tables (relkind "p").
+* Add support for `pg_service.conf` files
+* Add config option show_bottom_toolbar.
+
+Bug fixes:
+----------
+
+* Fix warning raised for using `is not` to compare string literal
+* Close open connection in completion_refresher thread
+
+Internal:
+---------
+
+* Drop Python2.7, 3.4, 3.5 support. (Thanks: `laixintao`_)
+* Support Python3.8. (Thanks: `laixintao`_)
+* Fix dead link in development guide. (Thanks: `BrownShibaDog`_)
+* Upgrade python-prompt-toolkit to v3.0. (Thanks: `laixintao`_)
+
+
+2.2.0:
+======
 
 Features:
 ---------
 
 * Add `\\G` as a terminator to sql statements that will show the results in expanded mode. This feature is copied from mycli. (Thanks: `Amjith Ramanujam`_)
 * Removed limit prompt and added automatic row limit on queries with no LIMIT clause (#1079) (Thanks: `Sebastian Janko`_)
+* Function argument completions now take account of table aliases (#1048). (Thanks: `Owen Stephens`_)
 
 Bug fixes:
 ----------
 
-* Error connecting to PostgreSQL 12beta1 (#1058). (Thanks: `Irina Truong`_)
+* Error connecting to PostgreSQL 12beta1 (#1058). (Thanks: `Irina Truong`_ and `Amjith Ramanujam`_)
 * Empty query caused error message (#1019) (Thanks: `Sebastian Janko`_)
 * History navigation bindings in multiline queries (#1004) (Thanks: `Pedro Ferrari`_)
+* Can't connect to pgbouncer database (#1093). (Thanks: `Irina Truong`_)
+* Fix broken multi-line history search (#1031). (Thanks: `Owen Stephens`_)
+* Fix slow typing/movement when multi-line query ends in a semicolon (#994). (Thanks: `Owen Stephens`_)
+* Fix for PQconninfo not available in libpq < 9.3 (#1110). (Thanks: `Irina Truong`_)
+
+Internal:
+---------
+
+* Add optional but default squash merge request to PULL_REQUEST_TEMPLATE
 
 2.1.1
 =====
@@ -998,3 +1056,7 @@ Improvements:
 .. _`Alexander Zawadzki`: https://github.com/zadacka
 .. _`Sebastian Janko`: https://github.com/sebojanko
 .. _`Pedro Ferrari`: https://github.com/petobens
+.. _`BrownShibaDog`: https://github.com/BrownShibaDog
+.. _`thegeorgeous`: https://github.com/thegeorgeous
+.. _`laixintao`: https://github.com/laixintao
+.. _`anthonydb`: https://github.com/anthonydb
