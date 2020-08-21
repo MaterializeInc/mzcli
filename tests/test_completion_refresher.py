@@ -5,7 +5,7 @@ from mock import Mock, patch
 
 @pytest.fixture
 def refresher():
-    from pgcli.completion_refresher import CompletionRefresher
+    from mzcli.completion_refresher import CompletionRefresher
 
     return CompletionRefresher()
 
@@ -89,7 +89,7 @@ def test_refresh_with_callbacks(refresher):
     pgexecute.extra_args = {}
     special = Mock()
 
-    with patch("pgcli.completion_refresher.PGExecute", pgexecute_class):
+    with patch("mzcli.completion_refresher.PGExecute", pgexecute_class):
         # Set refreshers to 0: we're not testing refresh logic here
         refresher.refreshers = {}
         refresher.refresh(pgexecute, special, callbacks)

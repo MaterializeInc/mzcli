@@ -517,15 +517,15 @@ class PGExecute(object):
         :return: (schema_name, rel_name) tuples
         """
         for kind in kinds:
-            if kind == "m":
-                # we only have immediate views
+            if kind in "mpf":
+                # we only have immediate views, and don't support partitioned/foreign tables
                 continue
             elif kind == "r":
                 sql = "SHOW TABLES"
             elif kind == "v":
                 sql = "SHOW VIEWS"
             else:
-                _logger.error("Unexpeded relation kind: '%s'", kind)
+                _logger.error("Unexpected relation kind: '%s'", kind)
                 return
 
             with self.conn.cursor() as cur:

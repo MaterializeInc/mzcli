@@ -21,7 +21,7 @@ install:
 
 script:
   - set -e
-  - coverage run --source pgcli -m py.test
+  - coverage run --source mzcli -m py.test
   - cd tests
   - behave --no-capture
   - cd ..

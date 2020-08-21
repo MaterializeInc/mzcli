@@ -3,7 +3,7 @@ import pytest
 
 @pytest.fixture
 def completer():
-    import pgcli.pgcompleter as pgcompleter
+    import mzcli.pgcompleter as pgcompleter
 
     return pgcompleter.PGCompleter()
 

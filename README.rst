@@ -11,14 +11,14 @@ The easiest way to get started with ``mzcli`` with a remote materialized is to u
     docker run -it materialize/mzcli --help
 
 This is a work-in-progress materialize client that does auto-completion and
-syntax highlighting. It is a soft fork of `pgcli`, and will hopefully one day be
-even less of a fork from pgcli, but due to materialize's extra functionality
+syntax highlighting. It is a soft fork of `mzcli`, and will hopefully one day be
+even less of a fork from mzcli, but due to materialize's extra functionality
 this will be a long-lived tool for interacting with ``materialized``.
 
-.. image:: screenshots/pgcli.gif
+.. image:: screenshots/mzcli.gif
 .. image:: screenshots/image01.png
 
-.. _pgcli: https://www.pgcli.com/
+.. _mzcli: https://www.mzcli.com/
 
 Usage
 -----
@@ -43,9 +43,9 @@ For more details:
 
 ::
 
-    $ pgcli --help
+    $ mzcli --help
 
-    Usage: pgcli [OPTIONS] [DBNAME] [USERNAME]
+    Usage: mzcli [OPTIONS] [DBNAME] [USERNAME]
 
     Options:
       -h, --host TEXT         Host address of the postgres database.
@@ -56,13 +56,13 @@ For more details:
       -W, --password          Force password prompt.
       -w, --no-password       Never prompt for password.
       --single-connection     Do not use a separate connection for completions.
-      -v, --version           Version of pgcli.
+      -v, --version           Version of mzcli.
       -d, --dbname TEXT       database name to connect to.
-      --pgclirc PATH          Location of pgclirc file.
+      --mzclirc PATH          Location of mzclirc file.
       -D, --dsn TEXT          Use DSN configured into the [alias_dsn] section of
-                              pgclirc file.
+                              mzclirc file.
       --list-dsn              list of DSN configured into the [alias_dsn] section
-                              of pgclirc file.
+                              of mzclirc file.
       --row-limit INTEGER     Set threshold for row limit prompt. Use 0 to disable
                               prompt.
       --less-chatty           Skip intro on startup and goodbye on exit.
@@ -75,7 +75,7 @@ For more details:
       --warn / --no-warn      Warn before running a destructive query.
       --help                  Show this message and exit.
 
-``pgcli`` also supports many of the same `environment variables`_ as ``psql`` for login options (e.g. ``PGHOST``, ``PGPORT``, ``PGUSER``, ``PGPASSWORD``, ``PGDATABASE``).
+``mzcli`` also supports many of the same `environment variables`_ as ``psql`` for login options (e.g. ``PGHOST``, ``PGPORT``, ``PGUSER``, ``PGPASSWORD``, ``PGDATABASE``).
 
 .. _environment variables: https://www.postgresql.org/docs/current/libpq-envars.html
 
@@ -108,14 +108,14 @@ See the file itself for a description of all available options.
 Contributions:
 --------------
 
-While we are not pgcli, the following documentation expresses our sentiments
+While we are not mzcli, the following documentation expresses our sentiments
 and still correctly represents the development workflow.
 
 If you're interested in contributing to this project, first of all I would like
 to extend my heartfelt gratitude. I've written a small doc to describe how to
 get this running in a development setup.
 
-https://github.com/dbcli/pgcli/blob/master/DEVELOP.rst
+https://github.com/dbcli/mzcli/blob/master/DEVELOP.rst
 
 Please feel free to file an issue if you need help, or jump in our `community
 slack`_.
@@ -129,15 +129,15 @@ slack`_.
   macOS:
   ======
 
-  The easiest way to install pgcli is using Homebrew.
+  The easiest way to install mzcli is using Homebrew.
 
   ::
 
-      $ brew install pgcli
+      $ brew install mzcli
 
   Done!
 
-  Alternatively, you can install ``pgcli`` as a python package using a package
+  Alternatively, you can install ``mzcli`` as a python package using a package
   manager called called ``pip``. You will need postgres installed on your system
   for this to work.
 
@@ -151,14 +151,14 @@ slack`_.
 
   ::
 
-      $ pip install pgcli
+      $ pip install mzcli
 
   If that fails due to permission issues, you might need to run the command with
   sudo permissions.
 
   ::
 
-      $ sudo pip install pgcli
+      $ sudo pip install mzcli
 
   If pip is not installed check if easy_install is available on the system.
 
@@ -166,7 +166,7 @@ slack`_.
 
       $ which easy_install
 
-      $ sudo easy_install pgcli
+      $ sudo easy_install mzcli
 
   Linux:
   ======
@@ -190,7 +190,7 @@ slack`_.
 
       $ sudo yum install python-pip  # RHEL, Centos, Fedora etc
 
-  ``pgcli`` requires python-dev, libpq-dev and libevent-dev packages. You can
+  ``mzcli`` requires python-dev, libpq-dev and libevent-dev packages. You can
   install these via your operating system package manager.
 
 
@@ -202,30 +202,30 @@ slack`_.
 
       $ sudo yum install python-devel postgresql-devel
 
-  Then you can install pgcli:
+  Then you can install mzcli:
 
   ::
 
-      $ sudo pip install pgcli
+      $ sudo pip install mzcli
 
 
   Docker
   ======
 
-  Pgcli can be run from within Docker. This can be useful to try pgcli without
+  Pgcli can be run from within Docker. This can be useful to try mzcli without
   installing it, or any dependencies, system-wide.
 
   To build the image:
 
   ::
 
-      $ docker build -t pgcli .
+      $ docker build -t mzcli .
 
   To create a container from the image:
 
   ::
 
-      $ docker run --rm -ti pgcli pgcli <ARGS>
+      $ docker run --rm -ti mzcli mzcli <ARGS>
 
   To access postgresql databases listening on localhost, make sure to run the
   docker in "host net mode". E.g. to access a database called "foo" on the
@@ -233,22 +233,22 @@ slack`_.
 
   ::
 
-      $ docker run --rm -ti --net host pgcli pgcli -h localhost foo
+      $ docker run --rm -ti --net host mzcli mzcli -h localhost foo
 
   To connect to a locally running instance over a unix socket, bind the socket to
   the docker container:
 
   ::
 
-      $ docker run --rm -ti -v /var/run/postgres:/var/run/postgres pgcli pgcli foo
+      $ docker run --rm -ti -v /var/run/postgres:/var/run/postgres mzcli mzcli foo
 
 
   IPython
   =======
 
   Pgcli can be run from within `IPython <https://ipython.org>`_ console. When working on a query,
-  it may be useful to drop into a pgcli session without leaving the IPython console, iterate on a
-  query, then quit pgcli to find the query results in your IPython workspace.
+  it may be useful to drop into a mzcli session without leaving the IPython console, iterate on a
+  query, then quit mzcli to find the query results in your IPython workspace.
 
   Assuming you have IPython installed:
 
@@ -256,20 +256,20 @@ slack`_.
 
       $ pip install ipython-sql
 
-  After that, run ipython and load the ``pgcli.magic`` extension:
+  After that, run ipython and load the ``mzcli.magic`` extension:
 
   ::
 
       $ ipython
 
-      In [1]: %load_ext pgcli.magic
+      In [1]: %load_ext mzcli.magic
 
 
   Connect to a database and construct a query:
 
   ::
 
-      In [2]: %pgcli postgres://someone@localhost:5432/world
+      In [2]: %mzcli postgres://someone@localhost:5432/world
       Connected: someone@world
       someone@localhost:world> select * from city c where countrycode = 'USA' and population > 1000000;
       +------+--------------+---------------+--------------+--------------+
@@ -289,7 +289,7 @@ slack`_.
       Time: 0.003s
 
 
-  Exit out of pgcli session with ``Ctrl + D`` and find the query results:
+  Exit out of mzcli session with ``Ctrl + D`` and find the query results:
 
   ::
 
@@ -315,7 +315,7 @@ slack`_.
       In [3]: my_result = _
 
 Pgcli only runs on Python3.6+ since 2.2.0, if you use an old version of Python,
-you should use install ``pgcli <= 2.2.0``.
+you should use install ``mzcli <= 2.2.0``.
 
   Thanks:
   -------
@@ -335,21 +335,21 @@ you should use install ``pgcli <= 2.2.0``.
   Thanks to all the beta testers and contributors for your time and patience. :)
 
 
-  .. |Build Status| image:: https://api.travis-ci.org/dbcli/pgcli.svg?branch=master
-      :target: https://travis-ci.org/dbcli/pgcli
+  .. |Build Status| image:: https://api.travis-ci.org/dbcli/mzcli.svg?branch=master
+      :target: https://travis-ci.org/dbcli/mzcli
 
-  .. |CodeCov| image:: https://codecov.io/gh/dbcli/pgcli/branch/master/graph/badge.svg
-     :target: https://codecov.io/gh/dbcli/pgcli
+  .. |CodeCov| image:: https://codecov.io/gh/dbcli/mzcli/branch/master/graph/badge.svg
+     :target: https://codecov.io/gh/dbcli/mzcli
      :alt: Code coverage report
 
-  .. |Landscape| image:: https://landscape.io/github/dbcli/pgcli/master/landscape.svg?style=flat
-     :target: https://landscape.io/github/dbcli/pgcli/master
+  .. |Landscape| image:: https://landscape.io/github/dbcli/mzcli/master/landscape.svg?style=flat
+     :target: https://landscape.io/github/dbcli/mzcli/master
      :alt: Code Health
 
-  .. |PyPI| image:: https://img.shields.io/pypi/v/pgcli.svg
-      :target: https://pypi.python.org/pypi/pgcli/
+  .. |PyPI| image:: https://img.shields.io/pypi/v/mzcli.svg
+      :target: https://pypi.python.org/pypi/mzcli/
       :alt: Latest Version
 
   .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
-      :target: https://gitter.im/dbcli/pgcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+      :target: https://gitter.im/dbcli/mzcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
       :alt: Gitter Chat

@@ -1,6 +1,6 @@
 import re
 import pexpect
-from pgcli.main import COLOR_CODE_REGEX
+from mzcli.main import COLOR_CODE_REGEX
 import textwrap
 
 try:

@@ -3,10 +3,10 @@
 
 Vagrant.configure(2) do |config|
 
-  config.vm.synced_folder ".", "/pgcli"
+  config.vm.synced_folder ".", "/mzcli"
 
-  pgcli_version = ENV['version']
-  pgcli_description = "Postgres CLI with autocompletion and syntax highlighting"
+  mzcli_version = ENV['version']
+  mzcli_description = "Postgres CLI with autocompletion and syntax highlighting"
 
   config.vm.define "debian" do |debian|
     debian.vm.box = "chef/debian-7.8"
@@ -20,14 +20,14 @@ Vagrant.configure(2) do |config|
     echo "-> Cleaning up old workspace"
     rm -rf build
     mkdir -p build/usr/share
-    virtualenv build/usr/share/pgcli
-    build/usr/share/pgcli/bin/pip install -U pip distribute
-    build/usr/share/pgcli/bin/pip uninstall -y distribute
-    build/usr/share/pgcli/bin/pip install /pgcli
+    virtualenv build/usr/share/mzcli
+    build/usr/share/mzcli/bin/pip install -U pip distribute
+    build/usr/share/mzcli/bin/pip uninstall -y distribute
+    build/usr/share/mzcli/bin/pip install /mzcli
 
     echo "-> Cleaning Virtualenv"
-    cd build/usr/share/pgcli
-    virtualenv-tools --update-path /usr/share/pgcli > /dev/null
+    cd build/usr/share/mzcli
+    virtualenv-tools --update-path /usr/share/mzcli > /dev/null
     cd /home/vagrant/
 
     echo "-> Removing compiled files"
@@ -35,15 +35,15 @@ Vagrant.configure(2) do |config|
     find build -iname '*.pyo' -delete
 
     echo "-> Creating PgCLI deb"
-    sudo fpm -t deb -s dir -C build -n pgcli -v #{pgcli_version} \
+    sudo fpm -t deb -s dir -C build -n mzcli -v #{mzcli_version} \
         -a all \
         -d libpq-dev \
         -d python-dev \
-        -p /pgcli/ \
-        --after-install /pgcli/post-install \
-        --after-remove /pgcli/post-remove \
-        --url https://github.com/dbcli/pgcli \
-        --description "#{pgcli_description}" \
+        -p /mzcli/ \
+        --after-install /mzcli/post-install \
+        --after-remove /mzcli/post-remove \
+        --url https://github.com/dbcli/mzcli \
+        --description "#{mzcli_description}" \
         --license 'BSD'
     SHELL
   end
@@ -60,14 +60,14 @@ Vagrant.configure(2) do |config|
     echo "-> Cleaning up old workspace"
     rm -rf build
     mkdir -p build/usr/share
-    virtualenv build/usr/share/pgcli
-    build/usr/share/pgcli/bin/pip install -U pip distribute
-    build/usr/share/pgcli/bin/pip uninstall -y distribute
-    build/usr/share/pgcli/bin/pip install /pgcli
+    virtualenv build/usr/share/mzcli
+    build/usr/share/mzcli/bin/pip install -U pip distribute
+    build/usr/share/mzcli/bin/pip uninstall -y distribute
+    build/usr/share/mzcli/bin/pip install /mzcli
 
     echo "-> Cleaning Virtualenv"
-    cd build/usr/share/pgcli
-    virtualenv-tools --update-path /usr/share/pgcli > /dev/null
+    cd build/usr/share/mzcli
+    virtualenv-tools --update-path /usr/share/mzcli > /dev/null
     cd /home/vagrant/
 
     echo "-> Removing compiled files"
@@ -76,15 +76,15 @@ Vagrant.configure(2) do |config|
 
     echo "-> Creating PgCLI RPM"
     echo $PATH
-    sudo /usr/local/bin/fpm -t rpm -s dir -C build -n pgcli -v #{pgcli_version} \
+    sudo /usr/local/bin/fpm -t rpm -s dir -C build -n mzcli -v #{mzcli_version} \
         -a all \
         -d postgresql-devel \
         -d python-devel \
-        -p /pgcli/ \
-        --after-install /pgcli/post-install \
-        --after-remove /pgcli/post-remove \
-        --url https://github.com/dbcli/pgcli \
-        --description "#{pgcli_description}" \
+        -p /mzcli/ \
+        --after-install /mzcli/post-install \
+        --after-remove /mzcli/post-remove \
+        --url https://github.com/dbcli/mzcli \
+        --description "#{mzcli_description}" \
         --license 'BSD'
     SHELL
   end

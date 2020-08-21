@@ -5,8 +5,8 @@ This is a guide for developers who would like to contribute to this project.
 GitHub Workflow
 ---------------
 
-If you're interested in contributing to pgcli, first of all my heart felt
-thanks. `Fork the project <https://github.com/dbcli/pgcli>`_ on github.  Then
+If you're interested in contributing to mzcli, first of all my heart felt
+thanks. `Fork the project <https://github.com/MaterializeInc/mzcli>`_ on github.  Then
 clone your fork into your computer (``git clone <url-for-your-fork>``).  Make
 the changes and create the commits in your local machine. Then push those
 changes to your fork. Then click on the pull request icon on github and create
@@ -15,16 +15,16 @@ promise to review the pull request in a reasonable window of time and get back
 to you.
 
 In order to keep your fork up to date with any changes from mainline, add a new
-git remote to your local copy called 'upstream' and point it to the main pgcli
+git remote to your local copy called 'upstream' and point it to the main mzcli
 repo.
 
 ::
 
-   $ git remote add upstream git@github.com:dbcli/pgcli.git
+   $ git remote add upstream git@github.com:MaterializeInc/mzcli.git
 
 Once the 'upstream' end point is added you can then periodically do a ``git
-pull upstream master`` to update your local copy and then do a ``git push
-origin master`` to keep your own fork up to date.
+pull upstream main`` to update your local copy and then do a ``git push
+origin main`` to keep your own fork up to date.
 
 Check Github's `Understanding the GitHub flow guide
 <https://guides.github.com/introduction/flow/>`_ for a more detailed
@@ -34,7 +34,7 @@ Local Setup
 -----------
 
 The installation instructions in the README file are intended for users of
-pgcli. If you're developing pgcli, you'll need to install it in a slightly
+mzcli. If you're developing mzcli, you'll need to install it in a slightly
 different way so you can see the effects of your changes right away without
 having to go through the install cycle every time you change the code.
 
@@ -42,14 +42,14 @@ It is highly recommended to use virtualenv for development. If you don't know
 what a virtualenv is, `this guide <http://docs.python-guide.org/en/latest/dev/virtualenvs/#virtual-environments>`_
 will help you get started.
 
-Create a virtualenv (let's call it pgcli-dev). Activate it:
+Create a virtualenv (let's call it mzcli-dev). Activate it:
 
 ::
 
-    source ./pgcli-dev/bin/activate
+    source ./mzcli-dev/bin/activate
 
-Once the virtualenv is activated, `cd` into the local clone of pgcli folder
-and install pgcli using pip as follows:
+Once the virtualenv is activated, `cd` into the local clone of mzcli folder
+and install mzcli using pip as follows:
 
 ::
 
@@ -59,11 +59,11 @@ and install pgcli using pip as follows:
 
     $ pip install -e .
 
-This will install the necessary dependencies as well as install pgcli from the
+This will install the necessary dependencies as well as install mzcli from the
 working folder into the virtualenv. By installing it using `pip install -e`
-we've linked the pgcli installation with the working copy. Any changes made
-to the code are immediately available in the installed version of pgcli. This
-makes it easy to change something in the code, launch pgcli and check the
+we've linked the mzcli installation with the working copy. Any changes made
+to the code are immediately available in the installed version of mzcli. This
+makes it easy to change something in the code, launch mzcli and check the
 effects of your changes.
 
 Adding PostgreSQL Special (Meta) Commands
@@ -98,18 +98,18 @@ The deb package can be installed as follows:
 
 ::
 
-    $ sudo dpkg -i pgcli*.deb   # if dependencies are available.
+    $ sudo dpkg -i mzcli*.deb   # if dependencies are available.
 
     or
 
-    $ sudo apt-get install -f pgcli*.deb  # if dependencies are not available.
+    $ sudo apt-get install -f mzcli*.deb  # if dependencies are not available.
 
 
 The rpm package can be installed as follows:
 
 ::
 
-    $ sudo yum install pgcli*.rpm
+    $ sudo yum install mzcli*.rpm
 
 Running the integration tests
 -----------------------------
@@ -144,18 +144,18 @@ service for the changes to take effect.
     # ONLY IF YOU MADE CHANGES TO YOUR pg_hba.conf FILE
     $ sudo service postgresql restart
 
-After that, tests in the ``/pgcli/tests`` directory can be run with:
+After that, tests in the ``/mzcli/tests`` directory can be run with:
 
 ::
 
-    # on directory /pgcli/tests
+    # on directory /mzcli/tests
     $ behave
 
-And on the ``/pgcli`` directory:
+And on the ``/mzcli`` directory:
 
 ::
 
-    # on directory /pgcli
+    # on directory /mzcli
     $ py.test
 
 To see stdout/stderr, use the following command:
@@ -169,10 +169,12 @@ Troubleshooting the integration tests
 
 - Make sure postgres instance on localhost is running
 - Check your ``pg_hba.conf`` file to verify local connections are enabled
-- Check `this issue <https://github.com/dbcli/pgcli/issues/945>`_ for relevant information.
-- Contact us on `gitter <https://gitter.im/dbcli/pgcli/>`_ or `file an issue <https://github.com/dbcli/pgcli/issues/new>`_.
+- Check `this issue <https://github.com/dbcli/mzcli/issues/945>`_ for relevant information.
+
+- Contact us on `slack <https://bit.ly/MTLZ-slack>`_ or `file an issue
+  <https://github.com/MaterializeInc/mzcli/issues/new>`_.
 
 Coding Style
 ------------
 
-``pgcli`` uses `black <https://github.com/ambv/black>`_ to format the source code. Make sure to install black.
+``mzcli`` uses `black <https://github.com/ambv/black>`_ to format the source code. Make sure to install black.

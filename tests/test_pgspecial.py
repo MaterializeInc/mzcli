@@ -1,5 +1,5 @@
 import pytest
-from pgcli.packages.sqlcompletion import (
+from mzcli.packages.sqlcompletion import (
     suggest_type,
     Special,
     Database,

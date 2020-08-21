@@ -45,7 +45,7 @@ def upgrade_config(config, def_config):
 
 
 def get_config(mzclirc_file=None):
-    from pgcli import __file__ as package_root
+    from mzcli import __file__ as package_root
 
     package_root = os.path.dirname(package_root)
 

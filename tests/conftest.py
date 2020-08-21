@@ -9,7 +9,7 @@ from utils import (
     db_connection,
     drop_tables,
 )
-import pgcli.pgexecute
+import mzcli.pgexecute
 
 
 @pytest.yield_fixture(scope="function")
