@@ -36,6 +36,7 @@ setup(
     package_data={"mzcli": ["mzclirc", "packages/pgliterals/pgliterals.json"]},
     description=description,
     long_description=open("README.rst").read(),
+    long_description_content_type="text/x-rst",
     install_requires=install_requirements,
     extras_require={"keyring": ["keyring >= 12.2.0"]},
     python_requires=">=3.6",
