@@ -10,7 +10,7 @@ install_requirements = [
     "click >= 4.1",
     "Pygments >= 2.0",  # Pygments has to be Capitalcased. WTF?
     "prompt_toolkit>=2.0.6,<4.0.0",
-    "psycopg2 >= 2.8",
+    "psycopg2-binary >= 2.8",
     "sqlparse >=0.3.0,<0.4",
     "configobj >= 5.0.6",
     "pendulum>=2.1.0",
@@ -36,6 +36,7 @@ setup(
     package_data={"mzcli": ["mzclirc", "packages/pgliterals/pgliterals.json"]},
     description=description,
     long_description=open("README.rst").read(),
+    long_description_content_type="text/x-rst",
     install_requires=install_requirements,
     extras_require={"keyring": ["keyring >= 12.2.0"]},
     python_requires=">=3.6",

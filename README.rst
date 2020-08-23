@@ -10,15 +10,21 @@ The easiest way to get started with ``mzcli`` with a remote materialized is to u
 
     docker run -it materialize/mzcli --help
 
+Or you can install ``mzcli`` using `pip`_ or `pipx`_ (recommended)::
+
+    pipx install mzcli
+
 This is a work-in-progress materialize client that does auto-completion and
-syntax highlighting. It is a soft fork of `mzcli`, and will hopefully one day be
+syntax highlighting. It is a soft fork of `pgcli`_, and will hopefully one day be
 even less of a fork from mzcli, but due to materialize's extra functionality
 this will be a long-lived tool for interacting with ``materialized``.
 
 .. image:: screenshots/mzcli.gif
 .. image:: screenshots/image01.png
 
-.. _mzcli: https://www.mzcli.com/
+.. _pgcli: https://www.pgcli.com/
+.. _pip: https://pip.pypa.io/en/latest/installing.html
+.. _pipx: https://pipxproject.github.io/pipx/installation/
 
 Usage
 -----
