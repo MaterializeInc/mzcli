@@ -8,7 +8,7 @@ Quick Start
 
 The easiest way to get started with ``mzcli`` with a remote materialized is to use docker::
 
-    docker run -it materialize/mzcli --help
+    docker run -it materialize/mzcli mzcli --help
 
 Or you can install ``mzcli`` using `pip`_ or `pipx`_ (recommended)::
 
