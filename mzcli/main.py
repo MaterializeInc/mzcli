@@ -506,7 +506,7 @@ class PGCli(object):
         # Connect to the database.
 
         if not user:
-            user = getuser()
+            user = "materialize"
 
         if not database:
             # every materialize instance comes with a "materialize" db
