@@ -27,28 +27,28 @@ from collections import namedtuple
 def test_obfuscate_process_password():
     original_title = setproctitle.getproctitle()
 
-    setproctitle.setproctitle("mzcli user=root password=secret host=localhost")
+    setproctitle.setproctitle("mzcli user=materialize password=secret host=localhost")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "mzcli user=root password=xxxx host=localhost"
+    expected = "mzcli user=materialize password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("mzcli user=root password=top secret host=localhost")
+    setproctitle.setproctitle("mzcli user=materialize password=top secret host=localhost")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "mzcli user=root password=xxxx host=localhost"
+    expected = "mzcli user=materialize password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("mzcli user=root password=top secret")
+    setproctitle.setproctitle("mzcli user=materialize password=top secret")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "mzcli user=root password=xxxx"
+    expected = "mzcli user=materialize password=xxxx"
     assert title == expected
 
-    setproctitle.setproctitle("mzcli postgres://root:secret@localhost/db")
+    setproctitle.setproctitle("mzcli postgres://materialize:secret@localhost/db")
     obfuscate_process_password()
     title = setproctitle.getproctitle()
-    expected = "mzcli postgres://root:xxxx@localhost/db"
+    expected = "mzcli postgres://materialize:xxxx@localhost/db"
     assert title == expected
 
     setproctitle.setproctitle(original_title)

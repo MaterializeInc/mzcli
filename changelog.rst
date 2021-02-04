@@ -19,6 +19,14 @@ Bug fixes:
 * Move from `humanize` to `pendulum` for displaying query durations (#1015)
 * More explicit error message when connecting using DSN alias and it is not found.
 
+3.0.1
+=====
+
+Bug fixes:
+----------
+
+* Default to using "materialize" as the username -- see MaterializeInc/materialize#5555.
+
 3.0.0
 =====
 
@@ -1060,3 +1068,4 @@ Improvements:
 .. _`thegeorgeous`: https://github.com/thegeorgeous
 .. _`laixintao`: https://github.com/laixintao
 .. _`anthonydb`: https://github.com/anthonydb
+.. _`Chris Golden`: https://github.com/cirego
