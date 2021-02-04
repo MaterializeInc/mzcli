@@ -26,6 +26,14 @@ this will be a long-lived tool for interacting with ``materialized``.
 .. _pip: https://pip.pypa.io/en/latest/installing.html
 .. _pipx: https://pipxproject.github.io/pipx/installation/
 
+Finding the Latest Version
+--------------------------
+
+New releases of ``mzcli`` are automatically built from ``main`` and published
+to `Docker Hub`_.
+
+.. _Docker Hub: https://hub.docker.com/repository/docker/materialize/mzcli
+
 Usage
 -----
 
