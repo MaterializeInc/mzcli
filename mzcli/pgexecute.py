@@ -466,8 +466,16 @@ class PGExecute(object):
 
     def search_path(self):
         """Returns the current search path as a list of schema names"""
-        # materialize only has one schema, and it is the empty schema
-        return [""]
+        query = "SHOW search_path"
+        search_path = []
+        with self.conn.cursor() as cur:
+            cur.execute(query)
+            for row in cur:
+                # currently the search path is a single row that is comma separated
+                values = row[0].split(",")
+                for val in values:
+                    search_path.append(val.strip())
+        return search_path
 
     def view_definition(self, spec):
         """Returns the SQL defining views described by `spec`"""
@@ -502,8 +510,12 @@ class PGExecute(object):
 
     def schemata(self):
         """Returns a list of schema names in the database"""
-        # materialize only has one schema and it is the empty schema
-        return [""]
+        with self.conn.cursor() as cur:
+            cur.execute("SHOW EXTENDED SCHEMAS")
+            schemas = []
+            for row in cur:
+                schemas.append(row[0])
+        return schemas
 
     def _relations(self, kinds=("r", "p", "f", "v", "m")):
         """Get table or view name metadata
@@ -528,11 +540,18 @@ class PGExecute(object):
                 _logger.error("Unexpected relation kind: '%s'", kind)
                 return
 
-            with self.conn.cursor() as cur:
-                _logger.debug("Tables Query %s. sql: %r", kind, sql)
-                cur.execute(sql)
-                for row in cur:
-                    yield ("", row[0])
+            for schema in self.schemata():
+                try:
+                    query = sql + " FROM {}".format(schema)
+                except Exception as e:
+                    _logger.error("unable to execute %s", query)
+                    continue
+
+                with self.conn.cursor() as cur:
+                    _logger.debug("Tables Query %s. sql: %r", kind, sql)
+                    cur.execute(query)
+                    for row in cur:
+                        yield (schema, row[0])
 
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
@@ -560,13 +579,24 @@ class PGExecute(object):
         """
         with self.conn.cursor() as cur:
             for row in self._relations(kinds):
+                schema = row[0]
                 tbl = row[1]
                 # TODO: Materialize should support mogrified table names
-                sql = "SHOW COLUMNS FROM {}".format(tbl)
-                _logger.debug("Show Columns Query: %s", sql)
-                cur.execute(sql)
+                if schema:
+                    q = "{}.{}".format(schema, tbl)
+                else:
+                    q = tbl
+                try:
+                    _logger.debug("Show Columns Query: %s", sql)
+                    sql = "SHOW COLUMNS FROM {}".format(q)
+                    cur.execute(sql)
+                except Exception:
+                    _logger.debug("Show columns %s failed, trying without schema", q)
+                    sql = "SHOW COLUMNS FROM {}".format(tbl)
+                    cur.execute(sql)
+
                 for column in cur.fetchall():
-                    yield ("", tbl, column[0], column[2], False, None)
+                    yield (schema, tbl, column[0], column[2], False, None)
 
     def table_columns(self):
         for row in self._columns(kinds=["r", "p", "f"]):
