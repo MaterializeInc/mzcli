@@ -449,11 +449,11 @@ class PGCli(object):
 
         handler.setFormatter(formatter)
 
-        root_logger = logging.getLogger("pgcli")
+        root_logger = logging.getLogger("mzcli")
         root_logger.addHandler(handler)
         root_logger.setLevel(log_level)
 
-        root_logger.debug("Initializing pgcli logging.")
+        root_logger.debug("Initializing mzcli logging.")
         root_logger.debug("Log file %r.", log_file)
 
         pgspecial_logger = logging.getLogger("pgspecial")
