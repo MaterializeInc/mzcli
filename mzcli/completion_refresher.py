@@ -3,10 +3,9 @@ import os
 from collections import OrderedDict
 
 from .pgcompleter import PGCompleter
-from .pgexecute import PGExecute
 
 
-class CompletionRefresher(object):
+class CompletionRefresher:
 
     refreshers = OrderedDict()
 
@@ -27,6 +26,10 @@ class CompletionRefresher(object):
                     has completed the refresh. The newly created completion
                     object will be passed in as an argument to each callback.
         """
+        if executor.is_virtual_database():
+            # do nothing
+            return [(None, None, None, "Auto-completion refresh can't be started.")]
+
         if self.is_refreshing():
             self._restart_refresh.set()
             return [(None, None, None, "Auto-completion refresh restarted.")]
@@ -141,7 +144,7 @@ def refresh_casing(completer, executor):
         with open(casing_file, "w") as f:
             f.write(casing_prefs)
     if os.path.isfile(casing_file):
-        with open(casing_file, "r") as f:
+        with open(casing_file) as f:
             completer.extend_casing([line.strip() for line in f])
 
 

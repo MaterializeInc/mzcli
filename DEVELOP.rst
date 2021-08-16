@@ -169,9 +169,7 @@ Troubleshooting the integration tests
 
 - Make sure postgres instance on localhost is running
 - Check your ``pg_hba.conf`` file to verify local connections are enabled
-- Check `this issue <https://github.com/dbcli/mzcli/issues/945>`_ for relevant information.
-
-- Contact us on `slack <https://bit.ly/MTLZ-slack>`_ or `file an issue
+- Contact us on `slack <https://materialize.com/s/chat>`_ or `file an issue
   <https://github.com/MaterializeInc/mzcli/issues/new>`_.
 
 Coding Style

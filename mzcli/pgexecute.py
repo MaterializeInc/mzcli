@@ -1,13 +1,15 @@
-import traceback
 import logging
+import select
+import traceback
+
+import pgspecial as special
 import psycopg2
-import psycopg2.extras
 import psycopg2.errorcodes
 import psycopg2.extensions as ext
+import psycopg2.extras
 import sqlparse
-import pgspecial as special
-import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE, make_dsn
+
 from .packages.parseutils.meta import FunctionMetadata, ForeignKey
 
 _logger = logging.getLogger(__name__)
@@ -27,38 +29,49 @@ ext.register_type(ext.new_type((17,), "BYTEA_TEXT", psycopg2.STRING))
 
 # TODO: Get default timeout from mzclirc?
 _WAIT_SELECT_TIMEOUT = 1
+_wait_callback_is_set = False
 
 
 def _wait_select(conn):
     """
-        copy-pasted from psycopg2.extras.wait_select
-        the default implementation doesn't define a timeout in the select calls
+    copy-pasted from psycopg2.extras.wait_select
+    the default implementation doesn't define a timeout in the select calls
     """
-    while 1:
-        try:
-            state = conn.poll()
-            if state == POLL_OK:
-                break
-            elif state == POLL_READ:
-                select.select([conn.fileno()], [], [], _WAIT_SELECT_TIMEOUT)
-            elif state == POLL_WRITE:
-                select.select([], [conn.fileno()], [], _WAIT_SELECT_TIMEOUT)
-            else:
-                raise conn.OperationalError("bad state from poll: %s" % state)
-        except KeyboardInterrupt:
-            conn.cancel()
-            # the loop will be broken by a server error
-            continue
-        except select.error as e:
-            errno = e.args[0]
-            if errno != 4:
-                raise
+    try:
+        while 1:
+            try:
+                state = conn.poll()
+                if state == POLL_OK:
+                    break
+                elif state == POLL_READ:
+                    select.select([conn.fileno()], [], [], _WAIT_SELECT_TIMEOUT)
+                elif state == POLL_WRITE:
+                    select.select([], [conn.fileno()], [], _WAIT_SELECT_TIMEOUT)
+                else:
+                    raise conn.OperationalError("bad state from poll: %s" % state)
+            except KeyboardInterrupt:
+                conn.cancel()
+                # the loop will be broken by a server error
+                continue
+            except OSError as e:
+                errno = e.args[0]
+                if errno != 4:
+                    raise
+    except psycopg2.OperationalError:
+        pass
 
 
-# When running a query, make pressing CTRL+C raise a KeyboardInterrupt
-# See http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
-# See also https://github.com/psycopg/psycopg2/issues/468
-ext.set_wait_callback(_wait_select)
+def _set_wait_callback(is_virtual_database):
+    global _wait_callback_is_set
+    if _wait_callback_is_set:
+        return
+    _wait_callback_is_set = True
+    if is_virtual_database:
+        return
+    # When running a query, make pressing CTRL+C raise a KeyboardInterrupt
+    # See http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
+    # See also https://github.com/psycopg/psycopg2/issues/468
+    ext.set_wait_callback(_wait_select)
 
 
 def register_date_typecasters(connection):
@@ -72,12 +85,14 @@ def register_date_typecasters(connection):
 
     cursor = connection.cursor()
     cursor.execute("SELECT NULL::date")
+    if cursor.description is None:
+        return
     date_oid = cursor.description[0][1]
     cursor.execute("SELECT NULL::timestamp")
     timestamp_oid = cursor.description[0][1]
     # cursor.execute("SELECT NULL::timestamp with time zone")
     # timestamptz_oid = cursor.description[0][1]
-    oids = (date_oid, timestamp_oid) #, timestamptz_oid)
+    oids = (date_oid, timestamp_oid)  # , timestamptz_oid)
     new_type = psycopg2.extensions.new_type(oids, "DATE", cast_date)
     psycopg2.extensions.register_type(new_type)
 
@@ -103,7 +118,7 @@ def register_json_typecasters(conn, loads_fn):
         try:
             psycopg2.extras.register_json(conn, loads=loads_fn, name=name)
             available.add(name)
-        except psycopg2.ProgrammingError:
+        except (psycopg2.ProgrammingError, psycopg2.errors.ProtocolViolation):
             pass
 
     return available
@@ -128,7 +143,39 @@ def register_hstore_typecaster(conn):
     #         pass
 
 
-class PGExecute(object):
+class ProtocolSafeCursor(psycopg2.extensions.cursor):
+    def __init__(self, *args, **kwargs):
+        self.protocol_error = False
+        self.protocol_message = ""
+        super().__init__(*args, **kwargs)
+
+    def __iter__(self):
+        if self.protocol_error:
+            raise StopIteration
+        return super().__iter__()
+
+    def fetchall(self):
+        if self.protocol_error:
+            return [(self.protocol_message,)]
+        return super().fetchall()
+
+    def fetchone(self):
+        if self.protocol_error:
+            return (self.protocol_message,)
+        return super().fetchone()
+
+    def execute(self, sql, args=None):
+        try:
+            psycopg2.extensions.cursor.execute(self, sql, args)
+            self.protocol_error = False
+            self.protocol_message = ""
+        except psycopg2.errors.ProtocolViolation as ex:
+            self.protocol_error = True
+            self.protocol_message = ex.pgerror
+            _logger.debug("%s: %s" % (ex.__class__.__name__, ex))
+
+
+class PGExecute:
 
     # The boolean argument to the current_schemas function indicates whether
     # implicit schemas, e.g. pg_catalog
@@ -191,8 +238,6 @@ class PGExecute(object):
         SELECT pg_catalog.pg_get_functiondef(f.f_oid)
         FROM f"""
 
-    version_query = "SELECT version();"
-
     def __init__(
         self,
         database=None,
@@ -204,6 +249,7 @@ class PGExecute(object):
         **kwargs,
     ):
         self._conn_params = {}
+        self._is_virtual_database = None
         self.conn = None
         self.dbname = None
         self.user = None
@@ -214,6 +260,11 @@ class PGExecute(object):
         self.extra_args = None
         self.connect(database, user, password, host, port, dsn, **kwargs)
         self.reset_expanded = None
+
+    def is_virtual_database(self):
+        if self._is_virtual_database is None:
+            self._is_virtual_database = self.is_protocol_error()
+        return self._is_virtual_database
 
     def copy(self):
         """Returns a clone of the current executor."""
@@ -251,9 +302,9 @@ class PGExecute(object):
                 )
 
         conn_params.update({k: v for k, v in new_params.items() if v})
+        conn_params["cursor_factory"] = ProtocolSafeCursor
 
         conn = psycopg2.connect(**conn_params)
-        cursor = conn.cursor()
         conn.set_client_encoding("utf8")
 
         self._conn_params = conn_params
@@ -294,22 +345,32 @@ class PGExecute(object):
         self.extra_args = kwargs
 
         if not self.host:
-            self.host = self.get_socket_directory()
+            self.host = (
+                "pgbouncer"
+                if self.is_virtual_database()
+                else self.get_socket_directory()
+            )
 
-        cursor.execute("SHOW ALL")
-        db_parameters = dict(name_val_desc[:2] for name_val_desc in cursor.fetchall())
+        with self.conn.cursor() as cursor:
+            cursor.execute("SHOW ALL")
+            db_parameters = dict(
+                name_val_desc[:2] for name_val_desc in cursor.fetchall()
+            )
 
-        #pid = self._select_one(cursor, "select pg_backend_pid()")[0]
-        #self.pid = pid
+        # pid = self._select_one(cursor, "select pg_backend_pid()")[0]
+        # self.pid = pid
         self.pid = 1
         self.superuser = db_parameters.get("is_superuser") == "1"
 
-        #self.server_version = self.get_server_version(cursor)
+        # self.server_version = self.get_server_version(cursor)
         self.servier_version = "1"
 
-        register_date_typecasters(conn)
-        #register_json_typecasters(self.conn, self._json_typecaster)
-        register_hstore_typecaster(self.conn)
+        _set_wait_callback(self.is_virtual_database())
+
+        if not self.is_virtual_database():
+            register_date_typecasters(conn)
+            # register_json_typecasters(self.conn, self._json_typecaster)
+            register_hstore_typecaster(self.conn)
 
     @property
     def short_host(self):
@@ -402,7 +463,13 @@ class PGExecute(object):
                         # See https://github.com/dbcli/pgcli/issues/1014.
                         cur = None
                     try:
-                        for result in pgspecial.execute(cur, sql):
+                        response = pgspecial.execute(cur, sql)
+                        if cur and cur.protocol_error:
+                            yield None, None, None, cur.protocol_message, statement, False, False
+                            # this would close connection. We should reconnect.
+                            self.connect()
+                            continue
+                        for result in response:
                             # e.g. execute_from_file already appends these
                             if len(result) < 7:
                                 yield result + (sql, True, True)
@@ -460,6 +527,9 @@ class PGExecute(object):
             _logger.debug("got a current description")
             headers = [x[0] for x in cur.description]
             return title, cur, headers, cur.statusmessage
+        elif cur.protocol_error:
+            _logger.debug("Protocol error, unsupported command.")
+            return title, None, None, cur.protocol_message
         else:
             _logger.debug("No rows in result.")
             return title, None, None, cur.statusmessage
@@ -490,7 +560,7 @@ class PGExecute(object):
             try:
                 cur.execute(sql, (spec,))
             except psycopg2.ProgrammingError:
-                raise RuntimeError("View {} does not exist.".format(spec))
+                raise RuntimeError(f"View {spec} does not exist.")
             result = cur.fetchone()
             view_type = "MATERIALIZED" if result[2] == "m" else ""
             return template.format(*result + (view_type,))
@@ -506,7 +576,7 @@ class PGExecute(object):
                 result = cur.fetchone()
                 return result[0]
             except psycopg2.ProgrammingError:
-                raise RuntimeError("Function {} does not exist.".format(spec))
+                raise RuntimeError(f"Function {spec} does not exist.")
 
     def schemata(self):
         """Returns a list of schema names in the database"""
@@ -555,16 +625,14 @@ class PGExecute(object):
 
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
-        for row in self._relations(kinds=["r", "p", "f"]):
-            yield row
+        yield from self._relations(kinds=["r", "p", "f"])
 
     def views(self):
         """Yields (schema_name, view_name) tuples.
 
-            Includes both views and and materialized views
+        Includes both views and and materialized views
         """
-        for row in self._relations(kinds=["v"]):
-            yield row
+        yield from self._relations(kinds=["v", "m"])
 
     def _columns(self, kinds=("r", "p", "f", "v", "m")):
         """Get column metadata for tables and views
@@ -599,16 +667,21 @@ class PGExecute(object):
                     yield (schema, tbl, column[0], column[2], False, None)
 
     def table_columns(self):
-        for row in self._columns(kinds=["r", "p", "f"]):
-            yield row
+        yield from self._columns(kinds=["r", "p", "f"])
 
     def view_columns(self):
-        for row in self._columns(kinds=["v"]):
-            yield row
+        yield from self._columns(kinds=["v", "m"])
 
     def databases(self):
         # materialize has no databases
         return [""]
+
+    def is_protocol_error(self):
+        query = "SELECT 1"
+        with self.conn.cursor() as cur:
+            _logger.debug("Simple Query. sql: %r", query)
+            cur.execute(query)
+            return bool(cur.protocol_error)
 
     def get_socket_directory(self):
         with self.conn.cursor() as cur:
@@ -755,7 +828,11 @@ class PGExecute(object):
 
     def datatypes(self):
         """Yields tuples of (schema_name, type_name)"""
-        return []
+        query = "SHOW EXTENDED TYPES"
+        with self.conn.cursor() as cur:
+            cur.execute(query)
+            for row in cur:
+                yield ("public", row[0])
 
     def casing(self):
         """Yields the most common casing for names used in db functions"""

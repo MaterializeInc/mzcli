@@ -193,7 +193,7 @@ def test_suggested_joins(completer, query, tbl):
     result = get_result(completer, query.format(tbl))
     assert completions_to_set(result) == completions_to_set(
         testdata.schemas_and_from_clause_items()
-        + [join("custom.shipments ON shipments.user_id = {0}.id".format(tbl))]
+        + [join(f"custom.shipments ON shipments.user_id = {tbl}.id")]
     )
 
 
@@ -345,6 +345,36 @@ def test_schema_qualified_function_name(completer):
     assert completions_to_set(result) == completions_to_set(
         [
             function("func3()", -len("func")),
+            function("set_returning_func()", -len("func")),
+        ]
+    )
+
+
+@parametrize("completer", completers(filtr=True, casing=False, aliasing=False))
+def test_schema_qualified_function_name_after_from(completer):
+    text = "SELECT * FROM custom.set_r"
+    result = get_result(completer, text)
+    assert completions_to_set(result) == completions_to_set(
+        [
+            function("set_returning_func()", -len("func")),
+        ]
+    )
+
+
+@parametrize("completer", completers(filtr=True, casing=False, aliasing=False))
+def test_unqualified_function_name_not_returned(completer):
+    text = "SELECT * FROM set_r"
+    result = get_result(completer, text)
+    assert completions_to_set(result) == completions_to_set([])
+
+
+@parametrize("completer", completers(filtr=True, casing=False, aliasing=False))
+def test_unqualified_function_name_in_search_path(completer):
+    completer.search_path = ["public", "custom"]
+    text = "SELECT * FROM set_r"
+    result = get_result(completer, text)
+    assert completions_to_set(result) == completions_to_set(
+        [
             function("set_returning_func()", -len("func")),
         ]
     )

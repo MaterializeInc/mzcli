@@ -8,7 +8,7 @@ from os import getenv
 POSTGRES_USER = getenv("PGUSER", "postgres")
 POSTGRES_HOST = getenv("PGHOST", "localhost")
 POSTGRES_PORT = getenv("PGPORT", 5432)
-POSTGRES_PASSWORD = getenv("PGPASSWORD", "")
+POSTGRES_PASSWORD = getenv("PGPASSWORD", "postgres")
 
 
 def db_connection(dbname=None):
@@ -73,7 +73,7 @@ def drop_tables(conn):
 def run(
     executor, sql, join=False, expanded=False, pgspecial=None, exception_formatter=None
 ):
-    " Return string output for the sql to be run "
+    "Return string output for the sql to be run"
 
     results = executor.run(sql, pgspecial, exception_formatter)
     formatted = []
@@ -89,7 +89,7 @@ def run(
 
 
 def completions_to_set(completions):
-    return set(
+    return {
         (completion.display_text, completion.display_meta_text)
         for completion in completions
-    )
+    }

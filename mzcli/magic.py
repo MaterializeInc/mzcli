@@ -25,7 +25,11 @@ def pgcli_line_magic(line):
     if hasattr(sql.connection.Connection, "get"):
         conn = sql.connection.Connection.get(parsed["connection"])
     else:
-        conn = sql.connection.Connection.set(parsed["connection"])
+        try:
+            conn = sql.connection.Connection.set(parsed["connection"])
+        # a new positional argument was added to Connection.set in version 0.4.0 of ipython-sql
+        except TypeError:
+            conn = sql.connection.Connection.set(parsed["connection"], False)
 
     try:
         # A corresponding pgcli object already exists
@@ -43,7 +47,7 @@ def pgcli_line_magic(line):
         conn._pgcli = pgcli
 
     # For convenience, print the connection alias
-    print("Connected: {}".format(conn.name))
+    print(f"Connected: {conn.name}")
 
     try:
         pgcli.run_cli()
