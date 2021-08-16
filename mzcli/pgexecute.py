@@ -587,8 +587,8 @@ class PGExecute(object):
                 else:
                     q = tbl
                 try:
-                    _logger.debug("Show Columns Query: %s", sql)
                     sql = "SHOW COLUMNS FROM {}".format(q)
+                    _logger.debug("Show Columns Query: %s", sql)
                     cur.execute(sql)
                 except Exception:
                     _logger.debug("Show columns %s failed, trying without schema", q)
