@@ -33,7 +33,9 @@ def test_obfuscate_process_password():
     expected = "mzcli user=materialize password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("mzcli user=materialize password=top secret host=localhost")
+    setproctitle.setproctitle(
+        "mzcli user=materialize password=top secret host=localhost"
+    )
     obfuscate_process_password()
     title = setproctitle.getproctitle()
     expected = "mzcli user=materialize password=xxxx host=localhost"

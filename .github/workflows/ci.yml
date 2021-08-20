@@ -15,17 +15,9 @@ jobs:
 
     services:
       postgres:
-        image: postgres:9.6
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+        image: materialize/materialized:latest
         ports:
-            - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+            - 6875:6875
 
     steps:
       - uses: actions/checkout@v2
@@ -43,17 +35,19 @@ jobs:
           pip install keyrings.alt>=3.1
 
       - name: Run unit tests
-        run: coverage run --source pgcli -m py.test
+        # ignore test_pgexecute because all fixtures try to drop schemas in a
+        # transaction, which mz does not support
+        run: coverage run --source mzcli -m py.test --ignore=tests/test_pgexecute.py
 
-      - name: Run integration tests
-        env:
-            PGUSER: postgres
-            PGPASSWORD: postgres
+      # - name: Run integration tests
+      #   env:
+      #       MZUSER: materialize
+      #       MZPASSWORD: materialize
 
-        run: behave tests/features --no-capture
+      #   run: behave tests/features --no-capture
 
-      - name: Check changelog for ReST compliance
-        run: rst2html.py --halt=warning changelog.rst >/dev/null
+      # - name: Check changelog for ReST compliance
+      #   run: rst2html.py --halt=warning changelog.rst >/dev/null
 
       - name: Run Black
         run: pip install black && black --check .

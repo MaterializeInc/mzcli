@@ -46,13 +46,13 @@ def before_all(context):
             "pg_test_host", os.getenv("PGHOST", "localhost")
         ),
         "user": context.config.userdata.get(
-            "pg_test_user", os.getenv("PGUSER", "postgres")
+            "pg_test_user", os.getenv("PGUSER", "materialize")
         ),
         "pass": context.config.userdata.get(
             "pg_test_pass", os.getenv("PGPASSWORD", None)
         ),
         "port": context.config.userdata.get(
-            "pg_test_port", os.getenv("PGPORT", "5432")
+            "pg_test_port", os.getenv("PGPORT", "6875")
         ),
         "cli_command": (
             context.config.userdata.get("pg_cli_command", None)

@@ -151,4 +151,4 @@ def refresh_casing(completer, executor):
 @refresher("functions")
 def refresh_functions(completer, executor):
     pass
-    #completer.extend_functions(executor.functions())
+    # completer.extend_functions(executor.functions())
