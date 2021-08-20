@@ -398,6 +398,7 @@
         "QUOTE_NULLABLE",
         "RADIANS",
         "RADIUS",
+        "RANDOM",
         "RANK",
         "REGEXP_MATCH",
         "REGEXP_MATCHES",

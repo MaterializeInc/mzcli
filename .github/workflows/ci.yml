@@ -1,0 +1,60 @@
+name: pgcli
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.rst'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    services:
+      postgres:
+        image: materialize/materialized:latest
+        ports:
+            - 6875:6875
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install requirements
+        run: |
+          pip install -U pip setuptools
+          pip install --no-cache-dir .
+          pip install -r requirements-dev.txt
+          pip install keyrings.alt>=3.1
+
+      - name: Run unit tests
+        # ignore test_pgexecute because all fixtures try to drop schemas in a
+        # transaction, which mz does not support
+        run: coverage run --source mzcli -m py.test --ignore=tests/test_pgexecute.py
+
+      # - name: Run integration tests
+      #   env:
+      #       MZUSER: materialize
+      #       MZPASSWORD: materialize
+
+      #   run: behave tests/features --no-capture
+
+      # - name: Check changelog for ReST compliance
+      #   run: rst2html.py --halt=warning changelog.rst >/dev/null
+
+      - name: Run Black
+        run: pip install black && black --check .
+        if: matrix.python-version == '3.6'
+
+      - name: Coverage
+        run: |
+          coverage combine
+          coverage report
+          codecov

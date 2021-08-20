@@ -12,7 +12,7 @@ from utils import (
 import mzcli.pgexecute
 
 
-@pytest.yield_fixture(scope="function")
+@pytest.fixture(scope="function")
 def connection():
     create_db("_test_db")
     connection = db_connection("_test_db")
@@ -30,7 +30,7 @@ def cursor(connection):
 
 @pytest.fixture
 def executor(connection):
-    return pgcli.pgexecute.PGExecute(
+    return mzcli.pgexecute.PGExecute(
         database="_test_db",
         user=POSTGRES_USER,
         host=POSTGRES_HOST,

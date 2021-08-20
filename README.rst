@@ -1,10 +1,12 @@
 A REPL for the Materialize Streaming Database Engine
 ----------------------------------------------------
 
-See https://materialize.io for an introduction to Materialize.
+See https://materialize.com for an introduction to Materialize.
 
 Quick Start
 -----------
+
+|Build Status| |Slack| |PyPI| |Docker|
 
 The easiest way to get started with ``mzcli`` with a remote materialized is to use docker::
 
@@ -62,34 +64,44 @@ For more details:
     Usage: mzcli [OPTIONS] [DBNAME] [USERNAME]
 
     Options:
-      -h, --host TEXT         Host address of the postgres database.
-      -p, --port INTEGER      Port number at which the postgres instance is
-                              listening.
-      -U, --username TEXT     Username to connect to the postgres database.
-      -u, --user TEXT         Username to connect to the postgres database.
-      -W, --password          Force password prompt.
-      -w, --no-password       Never prompt for password.
-      --single-connection     Do not use a separate connection for completions.
-      -v, --version           Version of mzcli.
-      -d, --dbname TEXT       database name to connect to.
-      --mzclirc PATH          Location of mzclirc file.
-      -D, --dsn TEXT          Use DSN configured into the [alias_dsn] section of
-                              mzclirc file.
-      --list-dsn              list of DSN configured into the [alias_dsn] section
-                              of mzclirc file.
-      --row-limit INTEGER     Set threshold for row limit prompt. Use 0 to disable
-                              prompt.
-      --less-chatty           Skip intro on startup and goodbye on exit.
-      --prompt TEXT           Prompt format (Default: "\u@\h:\d> ").
-      --prompt-dsn TEXT       Prompt format for connections using DSN aliases
-                              (Default: "\u@\h:\d> ").
-      -l, --list              list available databases, then exit.
-      --auto-vertical-output  Automatically switch to vertical output mode if the
-                              result is wider than the terminal width.
-      --warn / --no-warn      Warn before running a destructive query.
-      --help                  Show this message and exit.
+      -h, --host TEXT            Host address of the postgres database.
+      -p, --port INTEGER         Port number at which the postgres instance is
+                                 listening.
+      -U, --username TEXT        Username to connect to the postgres database.
+      -u, --user TEXT            Username to connect to the postgres database.
+      -W, --password             Force password prompt.
+      -w, --no-password          Never prompt for password.
+      --single-connection        Do not use a separate connection for completions.
+      -v, --version              Version of mzcli.
+      -d, --dbname TEXT          database name to connect to.
+      --mzclirc FILE             Location of mzclirc file.
+      -D, --dsn TEXT             Use DSN configured into the [alias_dsn] section
+                                 of mzclirc file.
+      --list-dsn                 list of DSN configured into the [alias_dsn]
+                                 section of mzclirc file.
+      --row-limit INTEGER        Set threshold for row limit prompt. Use 0 to
+                                 disable prompt.
+      --less-chatty              Skip intro on startup and goodbye on exit.
+      --prompt TEXT              Prompt format (Default: "\u@\h:\d> ").
+      --prompt-dsn TEXT          Prompt format for connections using DSN aliases
+                                 (Default: "\u@\h:\d> ").
+      -l, --list                 list available databases, then exit.
+      --auto-vertical-output     Automatically switch to vertical output mode if
+                                 the result is wider than the terminal width.
+      --warn [all|moderate|off]  Warn before running a destructive query.
+      --help                     Show this message and exit.
 
 ``mzcli`` also supports many of the same `environment variables`_ as ``psql`` for login options (e.g. ``PGHOST``, ``PGPORT``, ``PGUSER``, ``PGPASSWORD``, ``PGDATABASE``).
+
+The SSL-related environment variables are also supported, so if you need to connect a postgres database via ssl connection, you can set set environment like this:
+
+::
+
+    export PGSSLMODE="verify-full"
+    export PGSSLCERT="/your-path-to-certs/client.crt"
+    export PGSSLKEY="/your-path-to-keys/client.key"
+    export PGSSLROOTCERT="/your-path-to-ca/ca.crt"
+    pgcli -h localhost -p 5432 -U username postgres
 
 .. _environment variables: https://www.postgresql.org/docs/current/libpq-envars.html
 
@@ -349,21 +361,18 @@ slack`_.
   Thanks to all the beta testers and contributors for your time and patience. :)
 
 
-  .. |Build Status| image:: https://api.travis-ci.org/dbcli/mzcli.svg?branch=master
-      :target: https://travis-ci.org/dbcli/mzcli
+.. |Build Status| image:: https://github.com/MaterializeInc/mzcli/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/MaterializeInc/mzcli/actions/workflows/test.yml
+   :alt: Build Status
 
-  .. |CodeCov| image:: https://codecov.io/gh/dbcli/mzcli/branch/master/graph/badge.svg
-     :target: https://codecov.io/gh/dbcli/mzcli
-     :alt: Code coverage report
+.. |PyPI| image:: https://img.shields.io/pypi/v/mzcli.svg
+   :target: https://pypi.python.org/pypi/mzcli/
+   :alt: Latest Version
 
-  .. |Landscape| image:: https://landscape.io/github/dbcli/mzcli/master/landscape.svg?style=flat
-     :target: https://landscape.io/github/dbcli/mzcli/master
-     :alt: Code Health
+.. |Slack| image:: https://cdn.brandfolder.io/5H442O3W/at/pl546j-7le8zk-6gwiyo/Slack_Mark.svg?height=120&width=120
+   :target: https://materialize.com/s/chat
+   :alt: Slack Chat
 
-  .. |PyPI| image:: https://img.shields.io/pypi/v/mzcli.svg
-      :target: https://pypi.python.org/pypi/mzcli/
-      :alt: Latest Version
-
-  .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
-      :target: https://gitter.im/dbcli/mzcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-      :alt: Gitter Chat
+.. |Docker| image:: https://www.docker.com/sites/default/files/d8/2019-07/Moby-logo.png
+   :target: https://hub.docker.com/repository/docker/materialize/mzcli
+   :alt: Docker Image

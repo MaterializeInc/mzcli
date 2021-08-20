@@ -62,7 +62,7 @@ normalize_ref = lambda ref: ref if ref[0] == '"' else '"' + ref.lower() + '"'
 
 
 def generate_alias(tbl):
-    """ Generate a table alias, consisting of all upper-case letters in
+    """Generate a table alias, consisting of all upper-case letters in
     the table name, or, if there are no upper-case letters, the first letter +
     all letters preceded by _
     param tbl - unescaped name of the table to alias
@@ -83,7 +83,7 @@ class PGCompleter(Completer):
     reserved_words = set(get_literals("reserved"))
 
     def __init__(self, smart_completion=True, pgspecial=None, settings=None):
-        super(PGCompleter, self).__init__()
+        super().__init__()
         self.smart_completion = smart_completion
         self.pgspecial = pgspecial
         self.prioritizer = PrevalenceCounter()
@@ -140,7 +140,7 @@ class PGCompleter(Completer):
         return "'{}'".format(self.unescape_name(name))
 
     def unescape_name(self, name):
-        """ Unquote a string."""
+        """Unquote a string."""
         if name and name[0] == '"' and name[-1] == '"':
             name = name[1:-1]
 
@@ -172,12 +172,12 @@ class PGCompleter(Completer):
         self.all_completions.update(schemata)
 
     def extend_casing(self, words):
-        """ extend casing data
+        """extend casing data
 
         :return:
         """
         # casing should be a dict {lowercasename:PreferredCasingName}
-        self.casing = dict((word.lower(), word) for word in words)
+        self.casing = {word.lower(): word for word in words}
 
     def extend_relations(self, data, kind):
         """extend metadata for tables or views.
@@ -279,8 +279,8 @@ class PGCompleter(Completer):
             fk = ForeignKey(
                 parentschema, parenttable, parcol, childschema, childtable, childcol
             )
-            childcolmeta.foreignkeys.append((fk))
-            parcolmeta.foreignkeys.append((fk))
+            childcolmeta.foreignkeys.append(fk)
+            parcolmeta.foreignkeys.append(fk)
 
     def extend_datatypes(self, type_data):
 
@@ -424,7 +424,7 @@ class PGCompleter(Completer):
                 # the same priority as unquoted names.
                 lexical_priority = (
                     tuple(
-                        0 if c in (" _") else -ord(c)
+                        0 if c in " _" else -ord(c)
                         for c in self.unescape_name(item.lower())
                     )
                     + (1,)
@@ -491,14 +491,11 @@ class PGCompleter(Completer):
 
     def get_column_matches(self, suggestion, word_before_cursor):
         tables = suggestion.table_refs
-        do_qualify = (
-            suggestion.qualifiable
-            and {
-                "always": True,
-                "never": False,
-                "if_more_than_one_table": len(tables) > 1,
-            }[self.qualify_columns]
-        )
+        do_qualify = suggestion.qualifiable and {
+            "always": True,
+            "never": False,
+            "if_more_than_one_table": len(tables) > 1,
+        }[self.qualify_columns]
         qualify = lambda col, tbl: (
             (tbl + "." + self.case(col)) if do_qualify else self.case(col)
         )
@@ -520,9 +517,9 @@ class PGCompleter(Completer):
             # require_last_table is used for 'tb11 JOIN tbl2 USING (...' which should
             # suggest only columns that appear in the last table and one more
             ltbl = tables[-1].ref
-            other_tbl_cols = set(
+            other_tbl_cols = {
                 c.name for t, cs in scoped_cols.items() if t.ref != ltbl for c in cs
-            )
+            }
             scoped_cols = {
                 t: [col for col in cols if col.name in other_tbl_cols]
                 for t, cols in scoped_cols.items()
@@ -572,12 +569,12 @@ class PGCompleter(Completer):
         return self.find_matches(word_before_cursor, flat_cols(), meta="column")
 
     def alias(self, tbl, tbls):
-        """ Generate a unique table alias
+        """Generate a unique table alias
         tbl - name of the table to alias, quoted if it needs to be
         tbls - TableReference iterable of tables already in query
         """
         tbl = self.case(tbl)
-        tbls = set(normalize_ref(t.ref) for t in tbls)
+        tbls = {normalize_ref(t.ref) for t in tbls}
         if self.generate_aliases:
             tbl = generate_alias(self.unescape_name(tbl))
         if normalize_ref(tbl) not in tbls:
@@ -592,10 +589,10 @@ class PGCompleter(Completer):
         tbls = suggestion.table_refs
         cols = self.populate_scoped_cols(tbls)
         # Set up some data structures for efficient access
-        qualified = dict((normalize_ref(t.ref), t.schema) for t in tbls)
-        ref_prio = dict((normalize_ref(t.ref), n) for n, t in enumerate(tbls))
-        refs = set(normalize_ref(t.ref) for t in tbls)
-        other_tbls = set((t.schema, t.name) for t in list(cols)[:-1])
+        qualified = {normalize_ref(t.ref): t.schema for t in tbls}
+        ref_prio = {normalize_ref(t.ref): n for n, t in enumerate(tbls)}
+        refs = {normalize_ref(t.ref) for t in tbls}
+        other_tbls = {(t.schema, t.name) for t in list(cols)[:-1]}
         joins = []
         # Iterate over FKs in existing tables to find potential joins
         fks = (
@@ -670,7 +667,7 @@ class PGCompleter(Completer):
             return d
 
         # Tables that are closer to the cursor get higher prio
-        ref_prio = dict((tbl.ref, num) for num, tbl in enumerate(suggestion.table_refs))
+        ref_prio = {tbl.ref: num for num, tbl in enumerate(suggestion.table_refs)}
         # Map (schema, table, col) to tables
         coldict = list_dict(
             ((t.schema, t.name, c.name), t) for t, c in cols if t.ref != lref
@@ -706,7 +703,11 @@ class PGCompleter(Completer):
                     not f.is_aggregate
                     and not f.is_window
                     and not f.is_extension
-                    and (f.is_public or f.schema_name == suggestion.schema)
+                    and (
+                        f.is_public
+                        or f.schema_name in self.search_path
+                        or f.schema_name == suggestion.schema
+                    )
                 )
 
         else:
@@ -724,9 +725,7 @@ class PGCompleter(Completer):
         # Function overloading means we way have multiple functions of the same
         # name at this point, so keep unique names only
         all_functions = self.populate_functions(suggestion.schema, filt)
-        funcs = set(
-            self._make_cand(f, alias, suggestion, arg_mode) for f in all_functions
-        )
+        funcs = {self._make_cand(f, alias, suggestion, arg_mode) for f in all_functions}
 
         matches = self.find_matches(word_before_cursor, funcs, meta="function")
 
@@ -956,7 +955,7 @@ class PGCompleter(Completer):
         :return: {TableReference:{colname:ColumnMetaData}}
 
         """
-        ctes = dict((normalize_ref(t.name), t.columns) for t in local_tbls)
+        ctes = {normalize_ref(t.name): t.columns for t in local_tbls}
         columns = OrderedDict()
         meta = self.dbmetadata
 

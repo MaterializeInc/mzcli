@@ -1,6 +1,6 @@
 import os
 import platform
-import mock
+from unittest import mock
 
 import pytest
 
@@ -33,7 +33,9 @@ def test_obfuscate_process_password():
     expected = "mzcli user=materialize password=xxxx host=localhost"
     assert title == expected
 
-    setproctitle.setproctitle("mzcli user=materialize password=top secret host=localhost")
+    setproctitle.setproctitle(
+        "mzcli user=materialize password=top secret host=localhost"
+    )
     obfuscate_process_password()
     title = setproctitle.getproctitle()
     expected = "mzcli user=materialize password=xxxx host=localhost"
@@ -288,7 +290,12 @@ def test_pg_service_file(tmpdir):
         cli = PGCli(mzclirc_file=str(tmpdir.join("rcfile")))
         with open(tmpdir.join(".pg_service.conf").strpath, "w") as service_conf:
             service_conf.write(
-                """[myservice]
+                """File begins with a comment
+            that is not a comment
+            # or maybe a comment after all
+            because psql is crazy
+
+            [myservice]
             host=a_host
             user=a_user
             port=5433

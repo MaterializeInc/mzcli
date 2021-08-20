@@ -5,10 +5,10 @@ from mzcli.main import format_output, OutputSettings
 from mzcli.pgexecute import register_json_typecasters
 from os import getenv
 
-POSTGRES_USER = getenv("PGUSER", "postgres")
-POSTGRES_HOST = getenv("PGHOST", "localhost")
-POSTGRES_PORT = getenv("PGPORT", 5432)
-POSTGRES_PASSWORD = getenv("PGPASSWORD", "")
+POSTGRES_USER = getenv("MZUSER", getenv("PGUSER", "materialize"))
+POSTGRES_HOST = getenv("MZHOST", getenv("PGHOST", "localhost"))
+POSTGRES_PORT = getenv("MZPORT", getenv("PGPORT", 6875))
+POSTGRES_PASSWORD = getenv("MZPASSWORD", getenv("PGPASSWORD", "materialize"))
 
 
 def db_connection(dbname=None):
@@ -35,9 +35,8 @@ except:
     SERVER_VERSION = 0
 
 
-dbtest = pytest.mark.skipif(
-    not CAN_CONNECT_TO_DB,
-    reason="Need a postgres instance at localhost accessible by user 'postgres'",
+dbtest = pytest.mark.skip(
+    reason="mz does not support DROP in transactions, many other pg features",
 )
 
 
@@ -73,7 +72,7 @@ def drop_tables(conn):
 def run(
     executor, sql, join=False, expanded=False, pgspecial=None, exception_formatter=None
 ):
-    " Return string output for the sql to be run "
+    "Return string output for the sql to be run"
 
     results = executor.run(sql, pgspecial, exception_formatter)
     formatted = []
@@ -89,7 +88,7 @@ def run(
 
 
 def completions_to_set(completions):
-    return set(
+    return {
         (completion.display_text, completion.display_meta_text)
         for completion in completions
-    )
+    }

@@ -4,12 +4,37 @@ TBD
 Features:
 ---------
 
+* Consider `update` queries destructive and issue a warning. Change
+  `destructive_warning` setting to `all|moderate|off`, vs `true|false`. (#1239)
+* Skip initial comment in .pg_session even if it doesn't start with '#'
+* Include functions from schemas in search_path. (`Amjith Ramanujam`_)
+
+Bug fixes:
+----------
+
+* Fix issue where `syntax_style` config value would not have any effect. (#1212)
+* Fix crash because of not found `InputMode.REPLACE_SINGLE` with prompt-toolkit < 3.0.6
+* Fix comments being lost in config when saving a named query. (#1240)
+* Fix IPython magic for ipython-sql >= 0.4.0
+* Fix pager not being used when output format is set to csv. (#1238)
+* Add function literals random, generate_series, generate_subscripts
+* Fix ANSI escape codes in first line make the cli choose expanded output incorrectly
+* Fix pgcli crashing with virtual `pgbouncer` database. (#1093)
+
+3.1.0
+=====
+
+Features:
+---------
+
 * Make the output more compact by removing the empty newline. (Thanks: `laixintao`_)
 * Add support for using [pspg](https://github.com/okbob/pspg) as a pager (#1102)
 * Update python version in Dockerfile
 * Support setting color for null, string, number, keyword value
 * Support Prompt Toolkit 2
+* Support sqlparse 0.4.x
 * Update functions, datatypes literals for auto-suggestion field
+* Add suggestion for schema in function auto-complete
 
 Bug fixes:
 ----------
