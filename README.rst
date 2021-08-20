@@ -6,7 +6,7 @@ See https://materialize.com for an introduction to Materialize.
 Quick Start
 -----------
 
-|Build Status| |Slack| |PyPI| |Docker|
+|Slack| |Build Status| |PyPI| |Docker|
 
 The easiest way to get started with ``mzcli`` with a remote materialized is to use docker::
 
@@ -21,7 +21,7 @@ syntax highlighting. It is a soft fork of `pgcli`_, and will hopefully one day b
 even less of a fork from mzcli, but due to materialize's extra functionality
 this will be a long-lived tool for interacting with ``materialized``.
 
-.. image:: screenshots/mzcli.gif
+.. image:: screenshots/pgcli.gif
 .. image:: screenshots/image01.png
 
 .. _pgcli: https://www.pgcli.com/
@@ -369,10 +369,10 @@ slack`_.
    :target: https://pypi.python.org/pypi/mzcli/
    :alt: Latest Version
 
-.. |Slack| image:: https://cdn.brandfolder.io/5H442O3W/at/pl546j-7le8zk-6gwiyo/Slack_Mark.svg?height=120&width=120
+.. |Slack| image:: https://img.shields.io/badge/slack-chat-%23612dd3
    :target: https://materialize.com/s/chat
    :alt: Slack Chat
 
-.. |Docker| image:: https://www.docker.com/sites/default/files/d8/2019-07/Moby-logo.png
+.. |Docker| image:: https://img.shields.io/docker/v/materialize/mzcli.svg?label=docker
    :target: https://hub.docker.com/repository/docker/materialize/mzcli
    :alt: Docker Image
