@@ -651,16 +651,17 @@ class PGExecute:
                 tbl = row[1]
                 # TODO: Materialize should support mogrified table names
                 if schema:
-                    q = "{}.{}".format(schema, tbl)
+                    q = '"{}"."{}"'.format(schema, tbl)
                 else:
-                    q = tbl
+                    q = '"{}"'.format(tbl)
                 try:
                     sql = "SHOW COLUMNS FROM {}".format(q)
                     _logger.debug("Show Columns Query: %s", sql)
                     cur.execute(sql)
                 except Exception:
+                    sql = 'SHOW COLUMNS FROM "{}"'.format(tbl)
                     _logger.debug("Show columns %s failed, trying without schema", q)
-                    sql = "SHOW COLUMNS FROM {}".format(tbl)
+                    _logger.debug("Show Columns Query: %s", sql)
                     cur.execute(sql)
 
                 for column in cur.fetchall():
