@@ -455,6 +455,11 @@ class PGExecute:
 
                     # First try to run each query as special
                     _logger.debug("Trying a pgspecial command. sql: %r", sql)
+                    if sql.startswith(r"\d") and " " in sql:
+                        raise SyntaxError(
+                            "\\d does not support arguments in Materialize, use SHOW COLUMNS\n"
+                            "https://materialize.com/docs/sql/show-columns/"
+                        )
                     try:
                         cur = self.conn.cursor()
                     except psycopg2.InterfaceError:
