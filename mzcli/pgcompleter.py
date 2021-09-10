@@ -346,13 +346,13 @@ class PGCompleter(Completer):
             return []
         prio_order = [
             "keyword",
+            "schema",
             "function",
-            "view",
-            "source",
             "table",
+            "source",
+            "view",
             "datatype",
             "database",
-            "schema",
             "column",
             "table alias",
             "join",
