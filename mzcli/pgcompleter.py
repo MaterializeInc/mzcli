@@ -120,7 +120,13 @@ class PGCompleter(Completer):
         self.name_pattern = re.compile(r"^[_a-z][_a-z0-9\$]*$")
 
         self.databases = []
-        self.dbmetadata = {"tables": {}, "views": {}, "functions": {}, "datatypes": {}}
+        self.dbmetadata = {
+            "tables": {},
+            "sources": {},
+            "views": {},
+            "functions": {},
+            "datatypes": {},
+        }
         self.search_path = []
         self.casing = {}
 
@@ -160,9 +166,10 @@ class PGCompleter(Completer):
 
         # schemata is a list of schema names
         schemata = self.escaped_names(schemata)
-        metadata = self.dbmetadata["tables"]
-        for schema in schemata:
-            metadata[schema] = {}
+        for kind in ["sources", "tables"]:
+            metadata = self.dbmetadata[kind]
+            for schema in schemata:
+                metadata[schema] = {}
 
         # dbmetadata.values() are the 'tables' and 'functions' dicts
         for metadata in self.dbmetadata.values():
@@ -309,7 +316,13 @@ class PGCompleter(Completer):
         self.databases = []
         self.special_commands = []
         self.search_path = []
-        self.dbmetadata = {"tables": {}, "views": {}, "functions": {}, "datatypes": {}}
+        self.dbmetadata = {
+            "tables": {},
+            "sources": {},
+            "views": {},
+            "functions": {},
+            "datatypes": {},
+        }
         self.all_completions = set(self.keywords + self.functions)
 
     def find_matches(self, text, collection, mode="fuzzy", meta=None):
@@ -335,6 +348,7 @@ class PGCompleter(Completer):
             "keyword",
             "function",
             "view",
+            "source",
             "table",
             "datatype",
             "database",
@@ -759,6 +773,7 @@ class PGCompleter(Completer):
         f_sug = Function(s.schema, s.table_refs, usage="from")
         return (
             self.get_table_matches(t_sug, word_before_cursor, alias)
+            + self.get_source_matches(t_sug, word_before_cursor, alias)
             + self.get_view_matches(v_sug, word_before_cursor, alias)
             + self.get_function_matches(f_sug, word_before_cursor, alias)
         )
@@ -843,6 +858,12 @@ class PGCompleter(Completer):
         tables = self.maybe_hide_system_tables(suggestion, word_before_cursor, tables)
         tables = [self._make_cand(t, alias, suggestion) for t in tables]
         return self.find_matches(word_before_cursor, tables, meta="table")
+
+    def get_source_matches(self, suggestion, word_before_cursor, alias=False):
+        sources = self.populate_schema_objects(suggestion.schema, "sources")
+        sources = self.maybe_hide_system_tables(suggestion, word_before_cursor, sources)
+        sources = [self._make_cand(t, alias, suggestion) for t in sources]
+        return self.find_matches(word_before_cursor, sources, meta="source")
 
     def get_table_formats(self, _, word_before_cursor):
         formats = TabularOutputFormatter().supported_formats

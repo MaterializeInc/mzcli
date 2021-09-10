@@ -592,7 +592,7 @@ class PGExecute:
                 schemas.append(row[0])
         return schemas
 
-    def _relations(self, kinds=("r", "p", "f", "v", "m")):
+    def _relations(self, kinds=("r", "p", "f", "v", "m", "s")):
         """Get table or view name metadata
 
         :param kinds: list of postgres relkind filters:
@@ -600,6 +600,7 @@ class PGExecute:
                 'p' - partitioned table
                 'f' - foreign table
                 'v' - view
+                's' - source
                 'm' - materialized view
         :return: (schema_name, rel_name) tuples
         """
@@ -609,6 +610,8 @@ class PGExecute:
                 continue
             elif kind == "r":
                 sql = "SHOW TABLES"
+            elif kind == "s":
+                sql = "SHOW SOURCES"
             elif kind == "v":
                 sql = "SHOW VIEWS"
             else:
@@ -628,6 +631,10 @@ class PGExecute:
                     for row in cur:
                         yield (schema, row[0])
 
+    def sources(self):
+        """Yields (schema_name, source_name) tuples"""
+        yield from self._relations(kinds=["s"])
+
     def tables(self):
         """Yields (schema_name, table_name) tuples"""
         yield from self._relations(kinds=["r", "p", "f"])
@@ -639,13 +646,14 @@ class PGExecute:
         """
         yield from self._relations(kinds=["v", "m"])
 
-    def _columns(self, kinds=("r", "p", "f", "v", "m")):
+    def _columns(self, kinds=("r", "p", "f", "s", "v", "m")):
         """Get column metadata for tables and views
 
         :param kinds: kinds: list of postgres relkind filters:
                 'r' - table
                 'p' - partitioned table
                 'f' - foreign table
+                's' - source
                 'v' - view
                 'm' - materialized view
         :return: list of (schema_name, relation_name, column_name, column_type, has_default, default) tuples
@@ -674,6 +682,9 @@ class PGExecute:
 
     def table_columns(self):
         yield from self._columns(kinds=["r", "p", "f"])
+
+    def source_columns(self):
+        yield from self._columns(kinds=["s"])
 
     def view_columns(self):
         yield from self._columns(kinds=["v", "m"])
