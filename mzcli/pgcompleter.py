@@ -840,10 +840,7 @@ class PGCompleter(Completer):
         tables = self.populate_schema_objects(suggestion.schema, "tables")
         tables.extend(SchemaObject(tbl.name) for tbl in suggestion.local_tables)
 
-        # Unless we're sure the user really wants them, don't suggest the
-        # pg_catalog tables that are implicitly on the search path
-        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
-            tables = [t for t in tables if not t.name.startswith("pg_")]
+        tables = self.maybe_hide_system_tables(suggestion, word_before_cursor, tables)
         tables = [self._make_cand(t, alias, suggestion) for t in tables]
         return self.find_matches(word_before_cursor, tables, meta="table")
 
@@ -853,11 +850,19 @@ class PGCompleter(Completer):
 
     def get_view_matches(self, suggestion, word_before_cursor, alias=False):
         views = self.populate_schema_objects(suggestion.schema, "views")
-
-        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
-            views = [v for v in views if not v.name.startswith("pg_")]
+        views = self.maybe_hide_system_tables(suggestion, word_before_cursor, views)
         views = [self._make_cand(v, alias, suggestion) for v in views]
         return self.find_matches(word_before_cursor, views, meta="view")
+
+    @staticmethod
+    def maybe_hide_system_tables(suggestion, word_before_cursor, items):
+        # Unless we're sure the user really wants them, don'i suggest the
+        # mz_catalog or pg_catalog items that are implicitly on the search path
+        if not suggestion.schema and (not word_before_cursor.startswith("mz_")):
+            items = [i for i in items if not i.name.startswith("mz_")]
+        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
+            items = [i for i in items if not i.name.startswith("pg_")]
+        return items
 
     def get_alias_matches(self, suggestion, word_before_cursor):
         aliases = suggestion.aliases
