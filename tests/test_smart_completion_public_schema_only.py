@@ -673,18 +673,18 @@ def test_table_names_after_from(completer, text):
         testdata.schemas_and_from_clause_items()
     )
     assert [c.text for c in result] == [
-        "public",
+        "functions",
+        "user_emails",
         "orders",
         '"select"',
         "users",
         '"Users"',
-        "functions",
-        "user_emails",
         "_custom_fun()",
         "custom_fun()",
         "custom_func1()",
         "custom_func2()",
         "set_returning_func(x := , y := )",
+        "public",
     ]
 
 

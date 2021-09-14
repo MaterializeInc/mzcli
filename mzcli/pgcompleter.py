@@ -120,7 +120,13 @@ class PGCompleter(Completer):
         self.name_pattern = re.compile(r"^[_a-z][_a-z0-9\$]*$")
 
         self.databases = []
-        self.dbmetadata = {"tables": {}, "views": {}, "functions": {}, "datatypes": {}}
+        self.dbmetadata = {
+            "tables": {},
+            "sources": {},
+            "views": {},
+            "functions": {},
+            "datatypes": {},
+        }
         self.search_path = []
         self.casing = {}
 
@@ -160,9 +166,10 @@ class PGCompleter(Completer):
 
         # schemata is a list of schema names
         schemata = self.escaped_names(schemata)
-        metadata = self.dbmetadata["tables"]
-        for schema in schemata:
-            metadata[schema] = {}
+        for kind in ["sources", "tables"]:
+            metadata = self.dbmetadata[kind]
+            for schema in schemata:
+                metadata[schema] = {}
 
         # dbmetadata.values() are the 'tables' and 'functions' dicts
         for metadata in self.dbmetadata.values():
@@ -309,7 +316,13 @@ class PGCompleter(Completer):
         self.databases = []
         self.special_commands = []
         self.search_path = []
-        self.dbmetadata = {"tables": {}, "views": {}, "functions": {}, "datatypes": {}}
+        self.dbmetadata = {
+            "tables": {},
+            "sources": {},
+            "views": {},
+            "functions": {},
+            "datatypes": {},
+        }
         self.all_completions = set(self.keywords + self.functions)
 
     def find_matches(self, text, collection, mode="fuzzy", meta=None):
@@ -333,12 +346,13 @@ class PGCompleter(Completer):
             return []
         prio_order = [
             "keyword",
+            "schema",
             "function",
-            "view",
             "table",
+            "source",
+            "view",
             "datatype",
             "database",
-            "schema",
             "column",
             "table alias",
             "join",
@@ -759,6 +773,7 @@ class PGCompleter(Completer):
         f_sug = Function(s.schema, s.table_refs, usage="from")
         return (
             self.get_table_matches(t_sug, word_before_cursor, alias)
+            + self.get_source_matches(t_sug, word_before_cursor, alias)
             + self.get_view_matches(v_sug, word_before_cursor, alias)
             + self.get_function_matches(f_sug, word_before_cursor, alias)
         )
@@ -840,12 +855,15 @@ class PGCompleter(Completer):
         tables = self.populate_schema_objects(suggestion.schema, "tables")
         tables.extend(SchemaObject(tbl.name) for tbl in suggestion.local_tables)
 
-        # Unless we're sure the user really wants them, don't suggest the
-        # pg_catalog tables that are implicitly on the search path
-        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
-            tables = [t for t in tables if not t.name.startswith("pg_")]
+        tables = self.maybe_hide_system_tables(suggestion, word_before_cursor, tables)
         tables = [self._make_cand(t, alias, suggestion) for t in tables]
         return self.find_matches(word_before_cursor, tables, meta="table")
+
+    def get_source_matches(self, suggestion, word_before_cursor, alias=False):
+        sources = self.populate_schema_objects(suggestion.schema, "sources")
+        sources = self.maybe_hide_system_tables(suggestion, word_before_cursor, sources)
+        sources = [self._make_cand(t, alias, suggestion) for t in sources]
+        return self.find_matches(word_before_cursor, sources, meta="source")
 
     def get_table_formats(self, _, word_before_cursor):
         formats = TabularOutputFormatter().supported_formats
@@ -853,11 +871,19 @@ class PGCompleter(Completer):
 
     def get_view_matches(self, suggestion, word_before_cursor, alias=False):
         views = self.populate_schema_objects(suggestion.schema, "views")
-
-        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
-            views = [v for v in views if not v.name.startswith("pg_")]
+        views = self.maybe_hide_system_tables(suggestion, word_before_cursor, views)
         views = [self._make_cand(v, alias, suggestion) for v in views]
         return self.find_matches(word_before_cursor, views, meta="view")
+
+    @staticmethod
+    def maybe_hide_system_tables(suggestion, word_before_cursor, items):
+        # Unless we're sure the user really wants them, don'i suggest the
+        # mz_catalog or pg_catalog items that are implicitly on the search path
+        if not suggestion.schema and (not word_before_cursor.startswith("mz_")):
+            items = [i for i in items if not i.name.startswith("mz_")]
+        if not suggestion.schema and (not word_before_cursor.startswith("pg_")):
+            items = [i for i in items if not i.name.startswith("pg_")]
+        return items
 
     def get_alias_matches(self, suggestion, word_before_cursor):
         aliases = suggestion.aliases

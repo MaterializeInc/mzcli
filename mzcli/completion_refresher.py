@@ -117,6 +117,12 @@ def refresh_tables(completer, executor):
     completer.extend_foreignkeys(executor.foreignkeys())
 
 
+@refresher("sources")
+def refresh_sources(completer, executor):
+    completer.extend_relations(executor.sources(), kind="sources")
+    completer.extend_columns(executor.source_columns(), kind="sources")
+
+
 @refresher("views")
 def refresh_views(completer, executor):
     completer.extend_relations(executor.views(), kind="views")

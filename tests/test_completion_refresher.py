@@ -21,6 +21,7 @@ def test_ctor(refresher):
     expected_handlers = [
         "schemata",
         "tables",
+        "sources",
         "views",
         "types",
         "databases",

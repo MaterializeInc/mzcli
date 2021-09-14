@@ -63,11 +63,11 @@ def test_format_output():
     )
     expected = [
         "Title",
-        "+---------+---------+",
-        "| head1   | head2   |",
-        "|---------+---------|",
-        "| abc     | def     |",
-        "+---------+---------+",
+        "+-------+-------+",
+        "| head1 | head2 |",
+        "|-------+-------|",
+        "| abc   | def   |",
+        "+-------+-------+",
         "test status",
     ]
     assert list(results) == expected
@@ -130,11 +130,11 @@ def test_format_output_auto_expand():
     )
     table = [
         "Title",
-        "+---------+---------+",
-        "| head1   | head2   |",
-        "|---------+---------|",
-        "| abc     | def     |",
-        "+---------+---------+",
+        "+-------+-------+",
+        "| head1 | head2 |",
+        "|-------+-------|",
+        "| abc   | def   |",
+        "+-------+-------+",
         "test status",
     ]
     assert list(table_results) == table
