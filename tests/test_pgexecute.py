@@ -205,10 +205,11 @@ def test_functions_query(executor):
 
 @dbtest
 def test_datatypes_query(executor):
-    run(executor, "create type foo AS (a int, b text)")
+    run(executor, "create type foo as map (key_type = text, value_type = int4)")
+    run(executor, "create type bar as list (element_type = int8)")
 
-    types = list(executor.datatypes())
-    assert types == [("public", "foo")]
+    types = set(executor.datatypes())
+    assert types == {("public", "foo"), ("public", "bar")}
 
 
 @dbtest

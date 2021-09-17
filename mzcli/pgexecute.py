@@ -845,11 +845,22 @@ class PGExecute:
 
     def datatypes(self):
         """Yields tuples of (schema_name, type_name)"""
-        query = "SHOW EXTENDED TYPES"
+        query = """\
+        SELECT
+            mz_schemas.name AS schema_name,
+            mz_types.name AS type_name
+        FROM mz_catalog.mz_types
+        JOIN mz_catalog.mz_schemas
+          ON mz_types.schema_id = mz_schemas.id
+        WHERE mz_types.name NOT LIKE '\_%'
+          AND mz_schemas.name = 'public'
+        """
         with self.conn.cursor() as cur:
             cur.execute(query)
             for row in cur:
-                yield ("public", row[0])
+                name = row[0]
+                if not name.startswith("_"):
+                    yield (row[0], row[1])
 
     def casing(self):
         """Yields the most common casing for names used in db functions"""
