@@ -277,7 +277,7 @@ def test_execute_from_file_no_arg(executor, pgspecial):
 
 
 @dbtest
-@patch("pgcli.main.os")
+@patch("mzcli.main.os")
 def test_execute_from_file_io_error(os, executor, pgspecial):
     r"""\i with an os_error returns an error."""
     # Inject an OSError.
