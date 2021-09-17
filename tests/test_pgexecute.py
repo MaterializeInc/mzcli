@@ -4,7 +4,7 @@ import psycopg2
 import pytest
 from unittest.mock import patch, MagicMock
 from pgspecial.main import PGSpecial, NO_QUERY
-from utils import run, dbtest, requires_json, requires_jsonb
+from utils import run, dbtest, mz_skip_pgspecial, requires_json, requires_jsonb
 
 from mzcli.main import PGCli
 from mzcli.packages.parseutils.meta import FunctionMetadata
@@ -291,6 +291,7 @@ def test_multiple_queries_same_line(executor):
 
 
 @dbtest
+@mz_skip_pgspecial
 def test_multiple_queries_with_special_command_same_line(executor, pgspecial):
     result = run(executor, r"select 'foo'; \d", pgspecial=pgspecial)
     assert len(result) == 11  # 2 * (output+status) * 3 lines
@@ -415,6 +416,7 @@ def test_large_numbers_render_directly(executor, value):
 
 
 @dbtest
+@mz_skip_pgspecial
 @pytest.mark.parametrize("command", ["di", "dv", "ds", "df", "dT"])
 @pytest.mark.parametrize("verbose", ["", "+"])
 @pytest.mark.parametrize("pattern", ["", "x", "*.*", "x.y", "x.*", "*.y"])

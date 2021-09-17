@@ -35,10 +35,13 @@ except:
     SERVER_VERSION = 0
 
 
-dbtest = pytest.mark.skip(
-    reason="mz does not support DROP in transactions, many other pg features",
+dbtest = pytest.mark.skipif(
+    not CAN_CONNECT_TO_DB,
+    reason="Need a postgres instance at localhost accessible by user 'postgres'",
 )
 
+
+mz_skip_pgspecial = pytest.mark.skip("Materialize does not support most of pgspecial")
 
 requires_json = pytest.mark.skipif(
     not JSON_AVAILABLE, reason="Postgres server unavailable or json type not defined"
