@@ -229,7 +229,7 @@ def test_database_list(executor):
 @dbtest
 def test_invalid_syntax(executor, exception_formatter):
     result = run(executor, "invalid syntax!", exception_formatter=exception_formatter)
-    assert 'syntax error at or near "invalid"' in result[0]
+    assert "Expected a keyword at the beginning of a statement" in result[0]
 
 
 @dbtest
@@ -317,7 +317,7 @@ def test_multiple_queries_same_line_syntaxerror(executor, exception_formatter):
         exception_formatter=exception_formatter,
     )
     assert "fooé" in result[3]
-    assert 'syntax error at or near "invalid"' in result[-1]
+    assert "Expected a keyword at the beginning of a statement" in result[-1]
 
 
 @pytest.fixture
@@ -443,9 +443,18 @@ def test_describe_special(executor, command, verbose, pattern, pgspecial):
 
 
 @dbtest
-@pytest.mark.parametrize("sql", ["invalid sql", "SELECT 1; select error;"])
+@pytest.mark.parametrize("sql", ["invalid sql;"])
 def test_raises_with_no_formatter(executor, sql):
+    # TODO: mz should return the correct error code to turn this into a ProgrammingError
     with pytest.raises(psycopg2.ProgrammingError):
+        list(executor.run(sql))
+
+
+@dbtest
+@pytest.mark.parametrize("sql", ["SELECT 1; select error;"])
+def test_raises_with_no_formatter_internalerror(executor, sql):
+    # TODO: mz should return the correct error code to turn this into a ProgrammingError
+    with pytest.raises(psycopg2.InternalError):
         list(executor.run(sql))
 
 
