@@ -45,6 +45,10 @@ def mz_xfail(feature):
     return pytest.mark.xfail(reason=f"Materialize does not support {feature}")
 
 
+def mz_skip(why):
+    return pytest.mark.skip(f"materialize work needed: {why}")
+
+
 requires_json = pytest.mark.skipif(
     not JSON_AVAILABLE, reason="Postgres server unavailable or json type not defined"
 )

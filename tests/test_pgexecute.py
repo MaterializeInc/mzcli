@@ -4,7 +4,7 @@ import psycopg2
 import pytest
 from unittest.mock import patch, MagicMock
 from pgspecial.main import PGSpecial, NO_QUERY
-from utils import run, dbtest, mz_xfail, requires_json, requires_jsonb
+from utils import run, dbtest, mz_skip, mz_xfail, requires_json, requires_jsonb
 
 from mzcli.main import PGCli
 from mzcli.packages.parseutils.meta import FunctionMetadata
@@ -380,35 +380,38 @@ def test_jsonb_renders_without_u_prefix(executor, expanded):
 def test_date_time_types(executor):
     run(executor, "SET TIME ZONE UTC")
     assert (
-        run(executor, "SELECT (CAST('00:00:00' AS time))", join=True).split("\n")[3]
-        == "| 00:00:00 |"
+        " 00:00:00 "
+        in run(executor, "SELECT (CAST('00:00:00' AS time))", join=True).split("\n")[3]
     )
-    assert (
-        run(executor, "SELECT (CAST('00:00:00+14:59' AS timetz))", join=True).split(
-            "\n"
-        )[3]
-        == "| 00:00:00+14:59 |"
-    )
-    assert (
-        run(executor, "SELECT (CAST('4713-01-01 BC' AS date))", join=True).split("\n")[
-            3
-        ]
-        == "| 4713-01-01 BC |"
-    )
-    assert (
-        run(
-            executor, "SELECT (CAST('4713-01-01 00:00:00 BC' AS timestamp))", join=True
-        ).split("\n")[3]
-        == "| 4713-01-01 00:00:00 BC |"
-    )
-    assert (
-        run(
-            executor,
-            "SELECT (CAST('4713-01-01 00:00:00+00 BC' AS timestamptz))",
-            join=True,
-        ).split("\n")[3]
-        == "| 4713-01-01 00:00:00+00 BC |"
-    )
+    # materialize does not support the timetz type
+    # assert (
+    #     run(executor, "SELECT (CAST('00:00:00+14:59' AS timetz))", join=True).split(
+    #         "\n"
+    #     )[3]
+    #     == "| 00:00:00+14:59 |"
+    # )
+    # materialize does not support the bc epoch
+    # https://github.com/MaterializeInc/materialize/issues/8337
+    # assert (
+    #     run(executor, "SELECT (CAST('4713-01-01 BC' AS date))", join=True).split("\n")[
+    #         3
+    #     ]
+    #     == "| 4713-01-01 BC |"
+    # )
+    # assert (
+    #     run(
+    #         executor, "SELECT (CAST('4713-01-01 00:00:00 BC' AS timestamp))", join=True
+    #     ).split("\n")[3]
+    #     == "| 4713-01-01 00:00:00 BC |"
+    # )
+    # assert (
+    #     run(
+    #         executor,
+    #         "SELECT (CAST('4713-01-01 00:00:00+00 BC' AS timestamptz))",
+    #         join=True,
+    #     ).split("\n")[3]
+    #     == "| 4713-01-01 00:00:00+00 BC |"
+    # )
     assert (
         run(
             executor, "SELECT (CAST('-123456789 days 12:23:56' AS interval))", join=True
@@ -418,15 +421,17 @@ def test_date_time_types(executor):
 
 
 @dbtest
-@pytest.mark.parametrize("value", ["10000000", "10000000.0", "10000000000000"])
+@pytest.mark.parametrize("value", ["10000000", "10000000000000"])
 def test_large_numbers_render_directly(executor, value):
+    # add this back to parametrize: "10000000.0"
+    # https://github.com/MaterializeInc/materialize/issues/8336
     run(executor, "create table numbertest(a numeric)")
     run(executor, f"insert into numbertest (a) values ({value})")
     assert value in run(executor, "select * from numbertest", join=True)
 
 
 @dbtest
-@mz_xfail("pgspecial")
+@mz_skip("mz doesn't support most of pgspecial")
 @pytest.mark.parametrize("command", ["di", "dv", "ds", "df", "dT"])
 @pytest.mark.parametrize("verbose", ["", "+"])
 @pytest.mark.parametrize("pattern", ["", "x", "*.*", "x.y", "x.*", "*.y"])
@@ -472,6 +477,7 @@ def test_on_error_stop(executor, exception_formatter):
 
 
 @dbtest
+@mz_skip("mzcli cannot edit functions")
 def test_nonexistent_function_definition(executor):
     with pytest.raises(RuntimeError):
         result = executor.view_definition("there_is_no_such_function")
@@ -495,6 +501,7 @@ def test_function_definition(executor):
 
 
 @dbtest
+@mz_skip("need to implement view editing")
 def test_view_definition(executor):
     run(executor, "create table tbl1 (a text, b numeric)")
     run(executor, "create view vw1 AS SELECT * FROM tbl1")
@@ -507,6 +514,7 @@ def test_view_definition(executor):
 
 
 @dbtest
+@mz_skip("need to implement view editing")
 def test_nonexistent_view_definition(executor):
     with pytest.raises(RuntimeError):
         result = executor.view_definition("there_is_no_such_view")
