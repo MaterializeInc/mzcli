@@ -41,7 +41,9 @@ dbtest = pytest.mark.skipif(
 )
 
 
-mz_skip_pgspecial = pytest.mark.skip("Materialize does not support most of pgspecial")
+def mz_xfail(feature):
+    return pytest.mark.xfail(reason=f"Materialize does not support {feature}")
+
 
 requires_json = pytest.mark.skipif(
     not JSON_AVAILABLE, reason="Postgres server unavailable or json type not defined"

@@ -4,7 +4,7 @@ import psycopg2
 import pytest
 from unittest.mock import patch, MagicMock
 from pgspecial.main import PGSpecial, NO_QUERY
-from utils import run, dbtest, mz_skip_pgspecial, requires_json, requires_jsonb
+from utils import run, dbtest, mz_xfail, requires_json, requires_jsonb
 
 from mzcli.main import PGCli
 from mzcli.packages.parseutils.meta import FunctionMetadata
@@ -143,6 +143,7 @@ def test_schemata_table_views_and_columns_query(executor):
 
 
 @dbtest
+@mz_xfail("key constraints")
 def test_foreign_key_query(executor):
     run(executor, "create schema schema1")
     run(executor, "create schema schema2")
@@ -158,6 +159,7 @@ def test_foreign_key_query(executor):
 
 
 @dbtest
+@mz_xfail("user defined functions")
 def test_functions_query(executor):
     run(
         executor,
@@ -298,7 +300,7 @@ def test_multiple_queries_same_line(executor):
 
 
 @dbtest
-@mz_skip_pgspecial
+@mz_xfail("pgspecial")
 def test_multiple_queries_with_special_command_same_line(executor, pgspecial):
     result = run(executor, r"select 'foo'; \d", pgspecial=pgspecial)
     assert len(result) == 11  # 2 * (output+status) * 3 lines
@@ -344,6 +346,7 @@ def test_unicode_support_in_unknown_type(executor):
 
 
 @dbtest
+@mz_xfail("user defined enums")
 def test_unicode_support_in_enum_type(executor):
     run(executor, "CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy', '日本語')")
     run(executor, "CREATE TABLE person (name TEXT, current_mood mood)")
@@ -423,7 +426,7 @@ def test_large_numbers_render_directly(executor, value):
 
 
 @dbtest
-@mz_skip_pgspecial
+@mz_xfail("pgspecial")
 @pytest.mark.parametrize("command", ["di", "dv", "ds", "df", "dT"])
 @pytest.mark.parametrize("verbose", ["", "+"])
 @pytest.mark.parametrize("pattern", ["", "x", "*.*", "x.y", "x.*", "*.y"])
@@ -475,6 +478,7 @@ def test_nonexistent_function_definition(executor):
 
 
 @dbtest
+@mz_xfail("user defined functions")
 def test_function_definition(executor):
     run(
         executor,
