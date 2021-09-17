@@ -690,8 +690,17 @@ class PGExecute:
         yield from self._columns(kinds=["v", "m"])
 
     def databases(self):
-        # materialize has no databases
-        return [""]
+        with self.conn.cursor() as cur:
+            _logger.debug("Databases Query. sql: %r", self.databases_query)
+            cur.execute(self.databases_query)
+            return [x[0] for x in cur.fetchall()]
+
+    def full_databases(self):
+        with self.conn.cursor() as cur:
+            _logger.debug("Databases Query. sql: %r", self.full_databases_query)
+            cur.execute(self.full_databases_query)
+            headers = [x[0] for x in cur.description]
+            return cur.fetchall(), headers, cur.statusmessage
 
     def is_protocol_error(self):
         query = "SELECT 1"
