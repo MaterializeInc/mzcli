@@ -369,7 +369,7 @@ class PGExecute:
 
         if not self.is_virtual_database():
             register_date_typecasters(conn)
-            # register_json_typecasters(self.conn, self._json_typecaster)
+            register_json_typecasters(self.conn, self._json_typecaster)
             register_hstore_typecaster(self.conn)
 
     @property

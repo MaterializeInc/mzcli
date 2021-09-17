@@ -373,7 +373,7 @@ def test_jsonb_renders_without_u_prefix(executor, expanded):
         executor, "SELECT d FROM jsonbtest LIMIT 1", join=True, expanded=expanded
     )
 
-    assert '{"name": "Éowyn"}' in result
+    assert '{"name":"Éowyn"}' in result
 
 
 @dbtest
