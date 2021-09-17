@@ -58,3 +58,8 @@ jobs:
           coverage combine
           coverage report
           codecov
+
+      - name: Lint Distribution build
+        run: |
+          python setup.py sdist bdist_wheel
+          twine check dist/*
