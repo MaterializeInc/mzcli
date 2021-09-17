@@ -108,11 +108,10 @@ def test_schemata_table_views_and_columns_query(executor):
     assert set(executor.schemata()) >= {
         "public",
         "pg_catalog",
-        "information_schema",
         "schema1",
         "schema2",
     }
-    assert executor.search_path() == ["pg_catalog", "public"]
+    assert executor.search_path() == ["mz_catalog", "pg_catalog", "public", "mz_temp"]
 
     # tables
     assert set(executor.tables()) >= {
@@ -121,12 +120,19 @@ def test_schemata_table_views_and_columns_query(executor):
         ("schema1", "c"),
     }
 
-    assert set(executor.table_columns()) >= {
+    columns = set(executor.table_columns())
+    expected = {
         ("public", "a", "x", "text", False, None),
         ("public", "a", "y", "text", False, None),
         ("public", "b", "z", "text", False, None),
-        ("schema1", "c", "w", "text", True, "'meow'::text"),
+        # materialize does not support default values yet
+        # ("schema1", "c", "w", "text", True, "'meow'::text"),
+        ("schema1", "c", "w", "text", False, None),
     }
+    intersection = columns & expected
+    schema1 = {c for c in columns if c[0] == "schema1"}
+    assert schema1
+    assert intersection == expected
 
     # views
     assert set(executor.views()) >= {("public", "d")}
