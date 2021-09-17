@@ -15,7 +15,7 @@ def create_db(
     :return:
 
     """
-    cn = create_cn(hostname, password, username, "postgres", port)
+    cn = create_cn(hostname, password, username, "materialize", port)
 
     # ISOLATION_LEVEL_AUTOCOMMIT = 0
     # Needed for DB creation.
@@ -56,7 +56,7 @@ def drop_db(hostname="localhost", username=None, password=None, dbname=None, por
     :param password: string
     :param dbname: string
     """
-    cn = create_cn(hostname, password, username, "postgres", port)
+    cn = create_cn(hostname, password, username, "materialize", port)
 
     # ISOLATION_LEVEL_AUTOCOMMIT = 0
     # Needed for DB drop.
