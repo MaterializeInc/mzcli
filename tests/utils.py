@@ -60,13 +60,18 @@ def create_db(dbname):
 
 def drop_tables(conn):
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        # Materialize does not support dropping these items in transactions, so
+        # we need to send them as individual queries.
+        commands = """\
             DROP SCHEMA public CASCADE;
             CREATE SCHEMA public;
             DROP SCHEMA IF EXISTS schema1 CASCADE;
-            DROP SCHEMA IF EXISTS schema2 CASCADE"""
+            DROP SCHEMA IF EXISTS schema2 CASCADE;\
+        """.split(
+            "\n"
         )
+        for cmd in commands:
+            cur.execute(cmd.strip())
 
 
 def run(
