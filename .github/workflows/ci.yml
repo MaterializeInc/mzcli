@@ -37,7 +37,7 @@ jobs:
       - name: Run unit tests
         # ignore test_pgexecute because all fixtures try to drop schemas in a
         # transaction, which mz does not support
-        run: coverage run --source mzcli -m py.test --ignore=tests/test_pgexecute.py
+        run: coverage run --source mzcli -m py.test
 
       # - name: Run integration tests
       #   env:
@@ -58,3 +58,8 @@ jobs:
           coverage combine
           coverage report
           codecov
+
+      - name: Lint Distribution build
+        run: |
+          python setup.py sdist bdist_wheel
+          twine check dist/*

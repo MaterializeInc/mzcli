@@ -18,7 +18,7 @@ from mzcli.main import (
 )
 from mzcli.pgexecute import PGExecute
 from pgspecial.main import PAGER_OFF, PAGER_LONG_OUTPUT, PAGER_ALWAYS
-from utils import dbtest, run
+from utils import dbtest, run, mz_xfail
 from collections import namedtuple
 
 
@@ -74,6 +74,7 @@ def test_format_output():
 
 
 @dbtest
+@mz_xfail("casting from integer to bigint?")
 def test_format_array_output(executor):
     statement = """
     SELECT
@@ -97,6 +98,7 @@ def test_format_array_output(executor):
 
 
 @dbtest
+@mz_xfail("casting from integer to bigint?")
 def test_format_array_output_expanded(executor):
     statement = """
     SELECT

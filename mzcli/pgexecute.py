@@ -369,7 +369,7 @@ class PGExecute:
 
         if not self.is_virtual_database():
             register_date_typecasters(conn)
-            # register_json_typecasters(self.conn, self._json_typecaster)
+            register_json_typecasters(self.conn, self._json_typecaster)
             register_hstore_typecaster(self.conn)
 
     @property
@@ -690,8 +690,17 @@ class PGExecute:
         yield from self._columns(kinds=["v", "m"])
 
     def databases(self):
-        # materialize has no databases
-        return [""]
+        with self.conn.cursor() as cur:
+            _logger.debug("Databases Query. sql: %r", self.databases_query)
+            cur.execute(self.databases_query)
+            return [x[0] for x in cur.fetchall()]
+
+    def full_databases(self):
+        with self.conn.cursor() as cur:
+            _logger.debug("Databases Query. sql: %r", self.full_databases_query)
+            cur.execute(self.full_databases_query)
+            headers = [x[0] for x in cur.description]
+            return cur.fetchall(), headers, cur.statusmessage
 
     def is_protocol_error(self):
         query = "SELECT 1"
@@ -845,11 +854,22 @@ class PGExecute:
 
     def datatypes(self):
         """Yields tuples of (schema_name, type_name)"""
-        query = "SHOW EXTENDED TYPES"
+        query = """\
+        SELECT
+            mz_schemas.name AS schema_name,
+            mz_types.name AS type_name
+        FROM mz_catalog.mz_types
+        JOIN mz_catalog.mz_schemas
+          ON mz_types.schema_id = mz_schemas.id
+        WHERE mz_types.name NOT LIKE '\_%'
+          AND mz_schemas.name = 'public'
+        """
         with self.conn.cursor() as cur:
             cur.execute(query)
             for row in cur:
-                yield ("public", row[0])
+                name = row[0]
+                if not name.startswith("_"):
+                    yield (row[0], row[1])
 
     def casing(self):
         """Yields the most common casing for names used in db functions"""

@@ -4,7 +4,7 @@ import psycopg2
 import pytest
 from unittest.mock import patch, MagicMock
 from pgspecial.main import PGSpecial, NO_QUERY
-from utils import run, dbtest, requires_json, requires_jsonb
+from utils import run, dbtest, mz_skip, mz_xfail, requires_json, requires_jsonb
 
 from mzcli.main import PGCli
 from mzcli.packages.parseutils.meta import FunctionMetadata
@@ -108,11 +108,10 @@ def test_schemata_table_views_and_columns_query(executor):
     assert set(executor.schemata()) >= {
         "public",
         "pg_catalog",
-        "information_schema",
         "schema1",
         "schema2",
     }
-    assert executor.search_path() == ["pg_catalog", "public"]
+    assert executor.search_path() == ["mz_catalog", "pg_catalog", "public", "mz_temp"]
 
     # tables
     assert set(executor.tables()) >= {
@@ -121,12 +120,19 @@ def test_schemata_table_views_and_columns_query(executor):
         ("schema1", "c"),
     }
 
-    assert set(executor.table_columns()) >= {
+    columns = set(executor.table_columns())
+    expected = {
         ("public", "a", "x", "text", False, None),
         ("public", "a", "y", "text", False, None),
         ("public", "b", "z", "text", False, None),
-        ("schema1", "c", "w", "text", True, "'meow'::text"),
+        # materialize does not support default values yet
+        # ("schema1", "c", "w", "text", True, "'meow'::text"),
+        ("schema1", "c", "w", "text", False, None),
     }
+    intersection = columns & expected
+    schema1 = {c for c in columns if c[0] == "schema1"}
+    assert schema1
+    assert intersection == expected
 
     # views
     assert set(executor.views()) >= {("public", "d")}
@@ -137,6 +143,7 @@ def test_schemata_table_views_and_columns_query(executor):
 
 
 @dbtest
+@mz_xfail("key constraints")
 def test_foreign_key_query(executor):
     run(executor, "create schema schema1")
     run(executor, "create schema schema2")
@@ -152,6 +159,7 @@ def test_foreign_key_query(executor):
 
 
 @dbtest
+@mz_xfail("user defined functions")
 def test_functions_query(executor):
     run(
         executor,
@@ -205,10 +213,11 @@ def test_functions_query(executor):
 
 @dbtest
 def test_datatypes_query(executor):
-    run(executor, "create type foo AS (a int, b text)")
+    run(executor, "create type foo as map (key_type = text, value_type = int4)")
+    run(executor, "create type bar as list (element_type = int8)")
 
-    types = list(executor.datatypes())
-    assert types == [("public", "foo")]
+    types = set(executor.datatypes())
+    assert types == {("public", "foo"), ("public", "bar")}
 
 
 @dbtest
@@ -220,7 +229,7 @@ def test_database_list(executor):
 @dbtest
 def test_invalid_syntax(executor, exception_formatter):
     result = run(executor, "invalid syntax!", exception_formatter=exception_formatter)
-    assert 'syntax error at or near "invalid"' in result[0]
+    assert "Expected a keyword at the beginning of a statement" in result[0]
 
 
 @dbtest
@@ -268,7 +277,7 @@ def test_execute_from_file_no_arg(executor, pgspecial):
 
 
 @dbtest
-@patch("pgcli.main.os")
+@patch("mzcli.main.os")
 def test_execute_from_file_io_error(os, executor, pgspecial):
     r"""\i with an os_error returns an error."""
     # Inject an OSError.
@@ -291,6 +300,7 @@ def test_multiple_queries_same_line(executor):
 
 
 @dbtest
+@mz_xfail("pgspecial")
 def test_multiple_queries_with_special_command_same_line(executor, pgspecial):
     result = run(executor, r"select 'foo'; \d", pgspecial=pgspecial)
     assert len(result) == 11  # 2 * (output+status) * 3 lines
@@ -307,7 +317,7 @@ def test_multiple_queries_same_line_syntaxerror(executor, exception_formatter):
         exception_formatter=exception_formatter,
     )
     assert "fooé" in result[3]
-    assert 'syntax error at or near "invalid"' in result[-1]
+    assert "Expected a keyword at the beginning of a statement" in result[-1]
 
 
 @pytest.fixture
@@ -336,6 +346,7 @@ def test_unicode_support_in_unknown_type(executor):
 
 
 @dbtest
+@mz_xfail("user defined enums")
 def test_unicode_support_in_enum_type(executor):
     run(executor, "CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy', '日本語')")
     run(executor, "CREATE TABLE person (name TEXT, current_mood mood)")
@@ -362,42 +373,45 @@ def test_jsonb_renders_without_u_prefix(executor, expanded):
         executor, "SELECT d FROM jsonbtest LIMIT 1", join=True, expanded=expanded
     )
 
-    assert '{"name": "Éowyn"}' in result
+    assert '{"name":"Éowyn"}' in result
 
 
 @dbtest
 def test_date_time_types(executor):
     run(executor, "SET TIME ZONE UTC")
     assert (
-        run(executor, "SELECT (CAST('00:00:00' AS time))", join=True).split("\n")[3]
-        == "| 00:00:00 |"
+        " 00:00:00 "
+        in run(executor, "SELECT (CAST('00:00:00' AS time))", join=True).split("\n")[3]
     )
-    assert (
-        run(executor, "SELECT (CAST('00:00:00+14:59' AS timetz))", join=True).split(
-            "\n"
-        )[3]
-        == "| 00:00:00+14:59 |"
-    )
-    assert (
-        run(executor, "SELECT (CAST('4713-01-01 BC' AS date))", join=True).split("\n")[
-            3
-        ]
-        == "| 4713-01-01 BC |"
-    )
-    assert (
-        run(
-            executor, "SELECT (CAST('4713-01-01 00:00:00 BC' AS timestamp))", join=True
-        ).split("\n")[3]
-        == "| 4713-01-01 00:00:00 BC |"
-    )
-    assert (
-        run(
-            executor,
-            "SELECT (CAST('4713-01-01 00:00:00+00 BC' AS timestamptz))",
-            join=True,
-        ).split("\n")[3]
-        == "| 4713-01-01 00:00:00+00 BC |"
-    )
+    # materialize does not support the timetz type
+    # assert (
+    #     run(executor, "SELECT (CAST('00:00:00+14:59' AS timetz))", join=True).split(
+    #         "\n"
+    #     )[3]
+    #     == "| 00:00:00+14:59 |"
+    # )
+    # materialize does not support the bc epoch
+    # https://github.com/MaterializeInc/materialize/issues/8337
+    # assert (
+    #     run(executor, "SELECT (CAST('4713-01-01 BC' AS date))", join=True).split("\n")[
+    #         3
+    #     ]
+    #     == "| 4713-01-01 BC |"
+    # )
+    # assert (
+    #     run(
+    #         executor, "SELECT (CAST('4713-01-01 00:00:00 BC' AS timestamp))", join=True
+    #     ).split("\n")[3]
+    #     == "| 4713-01-01 00:00:00 BC |"
+    # )
+    # assert (
+    #     run(
+    #         executor,
+    #         "SELECT (CAST('4713-01-01 00:00:00+00 BC' AS timestamptz))",
+    #         join=True,
+    #     ).split("\n")[3]
+    #     == "| 4713-01-01 00:00:00+00 BC |"
+    # )
     assert (
         run(
             executor, "SELECT (CAST('-123456789 days 12:23:56' AS interval))", join=True
@@ -407,14 +421,17 @@ def test_date_time_types(executor):
 
 
 @dbtest
-@pytest.mark.parametrize("value", ["10000000", "10000000.0", "10000000000000"])
+@pytest.mark.parametrize("value", ["10000000", "10000000000000"])
 def test_large_numbers_render_directly(executor, value):
+    # add this back to parametrize: "10000000.0"
+    # https://github.com/MaterializeInc/materialize/issues/8336
     run(executor, "create table numbertest(a numeric)")
     run(executor, f"insert into numbertest (a) values ({value})")
     assert value in run(executor, "select * from numbertest", join=True)
 
 
 @dbtest
+@mz_skip("mz doesn't support most of pgspecial")
 @pytest.mark.parametrize("command", ["di", "dv", "ds", "df", "dT"])
 @pytest.mark.parametrize("verbose", ["", "+"])
 @pytest.mark.parametrize("pattern", ["", "x", "*.*", "x.y", "x.*", "*.y"])
@@ -426,9 +443,18 @@ def test_describe_special(executor, command, verbose, pattern, pgspecial):
 
 
 @dbtest
-@pytest.mark.parametrize("sql", ["invalid sql", "SELECT 1; select error;"])
+@pytest.mark.parametrize("sql", ["invalid sql;"])
 def test_raises_with_no_formatter(executor, sql):
+    # TODO: mz should return the correct error code to turn this into a ProgrammingError
     with pytest.raises(psycopg2.ProgrammingError):
+        list(executor.run(sql))
+
+
+@dbtest
+@pytest.mark.parametrize("sql", ["SELECT 1; select error;"])
+def test_raises_with_no_formatter_internalerror(executor, sql):
+    # TODO: mz should return the correct error code to turn this into a ProgrammingError
+    with pytest.raises(psycopg2.InternalError):
         list(executor.run(sql))
 
 
@@ -460,12 +486,14 @@ def test_on_error_stop(executor, exception_formatter):
 
 
 @dbtest
+@mz_skip("mzcli cannot edit functions")
 def test_nonexistent_function_definition(executor):
     with pytest.raises(RuntimeError):
         result = executor.view_definition("there_is_no_such_function")
 
 
 @dbtest
+@mz_xfail("user defined functions")
 def test_function_definition(executor):
     run(
         executor,
@@ -482,6 +510,7 @@ def test_function_definition(executor):
 
 
 @dbtest
+@mz_skip("need to implement view editing")
 def test_view_definition(executor):
     run(executor, "create table tbl1 (a text, b numeric)")
     run(executor, "create view vw1 AS SELECT * FROM tbl1")
@@ -494,6 +523,7 @@ def test_view_definition(executor):
 
 
 @dbtest
+@mz_skip("need to implement view editing")
 def test_nonexistent_view_definition(executor):
     with pytest.raises(RuntimeError):
         result = executor.view_definition("there_is_no_such_view")
