@@ -90,9 +90,9 @@ def register_date_typecasters(connection):
     date_oid = cursor.description[0][1]
     cursor.execute("SELECT NULL::timestamp")
     timestamp_oid = cursor.description[0][1]
-    # cursor.execute("SELECT NULL::timestamp with time zone")
-    # timestamptz_oid = cursor.description[0][1]
-    oids = (date_oid, timestamp_oid)  # , timestamptz_oid)
+    cursor.execute("SELECT NULL::timestamp with time zone")
+    timestamptz_oid = cursor.description[0][1]
+    oids = (date_oid, timestamp_oid, timestamptz_oid)
     new_type = psycopg2.extensions.new_type(oids, "DATE", cast_date)
     psycopg2.extensions.register_type(new_type)
 
@@ -131,16 +131,15 @@ def register_hstore_typecaster(conn):
     database and register a type caster that converts it to unicode.
     http://initd.org/psycopg/docs/extras.html#psycopg2.extras.register_hstore
     """
-    return None
-    # with conn.cursor() as cur:
-    #     try:
-    #         cur.execute(
-    #             "select t.oid FROM pg_type t WHERE t.typname = 'hstore' and t.typisdefined"
-    #         )
-    #         oid = cur.fetchone()[0]
-    #         ext.register_type(ext.new_type((oid,), "HSTORE", ext.UNICODE))
-    #     except Exception:
-    #         pass
+    with conn.cursor() as cur:
+        try:
+            cur.execute(
+                "select t.oid FROM pg_type t WHERE t.typname = 'hstore' and t.typisdefined"
+            )
+            oid = cur.fetchone()[0]
+            ext.register_type(ext.new_type((oid,), "HSTORE", ext.UNICODE))
+        except Exception:
+            pass
 
 
 class ProtocolSafeCursor(psycopg2.extensions.cursor):
@@ -183,7 +182,7 @@ class PGExecute:
         SELECT * FROM unnest(current_schemas(true))"""
 
     schemata_query = """
-        SELECT  nspname
+        SELECT  DISTINCT nspname
         FROM    pg_catalog.pg_namespace
         ORDER BY 1 """
 
@@ -351,21 +350,10 @@ class PGExecute:
                 else self.get_socket_directory()
             )
 
-        with self.conn.cursor() as cursor:
-            cursor.execute("SHOW ALL")
-            db_parameters = dict(
-                name_val_desc[:2] for name_val_desc in cursor.fetchall()
-            )
-
-        # pid = self._select_one(cursor, "select pg_backend_pid()")[0]
-        # self.pid = pid
+        # pid = conn.get_backend_pid()
         self.pid = 1
-        self.superuser = db_parameters.get("is_superuser") == "1"
-
-        # self.server_version = self.get_server_version(cursor)
-        self.servier_version = "1"
-
-        _set_wait_callback(self.is_virtual_database())
+        self.superuser = conn.get_parameter_status("is_superuser") in ("on", "1")
+        self.server_version = conn.get_parameter_status("server_version") or ""
 
         if not self.is_virtual_database():
             register_date_typecasters(conn)
@@ -521,6 +509,7 @@ class PGExecute:
         _logger.debug("Regular sql statement. sql: %r", split_sql)
         cur = self.conn.cursor()
         cur.execute(split_sql)
+
         # conn.notices persist between queies, we use pop to clear out the list
         title = ""
         while len(self.conn.notices) > 0:
@@ -529,7 +518,6 @@ class PGExecute:
         # cur.description will be None for operations that do not return
         # rows.
         if cur.description:
-            _logger.debug("got a current description")
             headers = [x[0] for x in cur.description]
             return title, cur, headers, cur.statusmessage
         elif cur.protocol_error:
@@ -541,16 +529,18 @@ class PGExecute:
 
     def search_path(self):
         """Returns the current search path as a list of schema names"""
-        query = "SHOW search_path"
-        search_path = []
-        with self.conn.cursor() as cur:
-            cur.execute(query)
-            for row in cur:
-                # currently the search path is a single row that is comma separated
-                values = row[0].split(",")
-                for val in values:
-                    search_path.append(val.strip())
-        return search_path
+
+        try:
+            with self.conn.cursor() as cur:
+                _logger.debug("Search path query. sql: %r", self.search_path_query)
+                cur.execute(self.search_path_query)
+                return [x[0] for x in cur.fetchall()]
+        except psycopg2.ProgrammingError:
+            fallback = "SELECT * FROM current_schemas(true)"
+            with self.conn.cursor() as cur:
+                _logger.debug("Search path query. sql: %r", fallback)
+                cur.execute(fallback)
+                return cur.fetchone()[0]
 
     def view_definition(self, spec):
         """Returns the SQL defining views described by `spec`"""
@@ -585,12 +575,11 @@ class PGExecute:
 
     def schemata(self):
         """Returns a list of schema names in the database"""
+
         with self.conn.cursor() as cur:
-            cur.execute("SHOW EXTENDED SCHEMAS")
-            schemas = []
-            for row in cur:
-                schemas.append(row[0])
-        return schemas
+            _logger.debug("Schemata Query. sql: %r", self.schemata_query)
+            cur.execute(self.schemata_query)
+            return [x[0] for x in cur.fetchall()]
 
     def _relations(self, kinds=("r", "p", "f", "v", "m", "s")):
         """Get table or view name metadata
@@ -604,29 +593,22 @@ class PGExecute:
                 'm' - materialized view
         :return: (schema_name, rel_name) tuples
         """
-        for kind in kinds:
-            if kind in "mpf":
-                # we only have immediate views, and don't support partitioned/foreign tables
-                continue
-            elif kind == "r":
-                sql = "SHOW TABLES"
-            elif kind == "s":
-                sql = "SHOW SOURCES"
-            elif kind == "v":
-                sql = "SHOW VIEWS"
-            else:
-                _logger.error("Unexpected relation kind: '%s'", kind)
-                return
 
-            for schema in self.schemata():
-                try:
-                    query = sql + " FROM {}".format(schema)
-                except Exception as e:
-                    _logger.error("unable to execute %s", query)
-                    continue
+        with self.conn.cursor() as cur:
+            sql = cur.mogrify(self.tables_query, [kinds])
+            _logger.debug("Tables Query. sql: %r", sql)
+            cur.execute(sql)
+            yield from cur
 
-                with self.conn.cursor() as cur:
-                    _logger.debug("Tables Query %s. sql: %r", kind, sql)
+            if "s" in kinds:
+                for schema in self.schemata():
+                    try:
+                        query = "SHOW SOURCES FROM {}".format(schema)
+                    except Exception as e:
+                        _logger.error("unable to execute %s", query)
+                        continue
+
+                    _logger.debug("Sources Query. sql: %r", sql)
                     cur.execute(query)
                     for row in cur:
                         yield (schema, row[0])
@@ -761,8 +743,7 @@ class PGExecute:
     def functions(self):
         """Yields FunctionMetadata named tuples"""
 
-        # Materialize doesn't support the Postgres constructs used in any of
-        # the below queries.
+        # Materialize doesn't support user-defined functions
         return
 
         if self.conn.server_version >= 110000:
@@ -854,6 +835,7 @@ class PGExecute:
 
     def datatypes(self):
         """Yields tuples of (schema_name, type_name)"""
+        # we actually could use the upstream query for this but it is much slower
         query = """\
         SELECT
             mz_schemas.name AS schema_name,
@@ -861,15 +843,12 @@ class PGExecute:
         FROM mz_catalog.mz_types
         JOIN mz_catalog.mz_schemas
           ON mz_types.schema_id = mz_schemas.id
-        WHERE mz_types.name NOT LIKE '\_%'
+        WHERE mz_types.name NOT LIKE '\\_%'
           AND mz_schemas.name = 'public'
         """
         with self.conn.cursor() as cur:
             cur.execute(query)
-            for row in cur:
-                name = row[0]
-                if not name.startswith("_"):
-                    yield (row[0], row[1])
+            yield from cur
 
     def casing(self):
         """Yields the most common casing for names used in db functions"""
