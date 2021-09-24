@@ -1118,7 +1118,7 @@ class PGCli:
     "-h",
     "--host",
     default="localhost",
-    envvar="PGHOST",
+    envvar="MZHOST",
     help="Host address of the materialized database.",
 )
 @click.option(
@@ -1126,7 +1126,7 @@ class PGCli:
     "--port",
     default=6875,
     help="Port number at which the materialized instance is listening.",
-    envvar="PGPORT",
+    envvar="MZPORT",
     type=click.INT,
 )
 @click.option(
