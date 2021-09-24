@@ -94,7 +94,7 @@ def test_expanded_slash_G(executor, pgspecial):
 
 
 @dbtest
-def test_schemata_table_views_and_columns_query(executor):
+def test_schemata_table_views_and_columns_query(executor, extra_executor):
     run(executor, "create table a(x text, y text)")
     run(executor, "create table b(z text)")
     run(executor, "create view d as select 1 as e")
@@ -105,16 +105,18 @@ def test_schemata_table_views_and_columns_query(executor):
     # schemata
     # don't enforce all members of the schemas since they may include postgres
     # temporary schemas
-    assert set(executor.schemata()) >= {
+    schemata = set(executor.schemata())
+    assert schemata >= {
         "public",
         "pg_catalog",
         "schema1",
         "schema2",
     }
-    assert executor.search_path() == ["mz_catalog", "pg_catalog", "public", "mz_temp"]
+    assert executor.search_path() == ["public", "mz_temp", "mz_catalog", "pg_catalog"]
 
     # tables
-    assert set(executor.tables()) >= {
+    default_tables = set(executor.tables())
+    assert default_tables >= {
         ("public", "a"),
         ("public", "b"),
         ("schema1", "c"),
@@ -140,6 +142,13 @@ def test_schemata_table_views_and_columns_query(executor):
     assert set(executor.view_columns()) >= {
         ("public", "d", "e", "integer", False, None)
     }
+
+    # tables only from current database
+    run(extra_executor, "create table c(z text)")
+    extra_tables = set(extra_executor.tables())
+    expected_extra_tables = {("public", "c")}
+    assert extra_tables >= expected_extra_tables
+    assert not (expected_extra_tables & default_tables)
 
 
 @dbtest
