@@ -46,23 +46,36 @@ jobs:
 
       #   run: behave tests/features --no-capture
 
-      # - name: Check changelog for ReST compliance
-      #   run: rst2html.py --halt=warning changelog.rst >/dev/null
-
-      - name: Run Black
-        run: |
-          pip install black
-          black --version
-          black --check --diff .
-        if: matrix.python-version == '3.6'
-
       - name: Coverage
         run: |
           coverage combine
           coverage report
           codecov
 
-      - name: Lint Distribution build
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Check changelog for ReST compliance
         run: |
+          pip install docutils>=0.13.1
+          rst2html.py --halt=warning changelog.rst >/dev/null
+
+      - name: Check code style with Black
+        run: |
+          pip install black
+          black --version
+          black --check --diff .
+
+      - name: Check Distribution builds
+        run: |
+          pip install twine wheel
           python setup.py sdist bdist_wheel
           twine check dist/*
