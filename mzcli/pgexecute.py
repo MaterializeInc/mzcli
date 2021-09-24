@@ -181,19 +181,28 @@ class PGExecute:
     search_path_query = """
         SELECT * FROM unnest(current_schemas(true))"""
 
-    schemata_query = """
-        SELECT  DISTINCT nspname
-        FROM    pg_catalog.pg_namespace
-        ORDER BY 1 """
+    schemata_query = """\
+        SELECT s.name
+          FROM mz_schemas s
+               LEFT JOIN  mz_databases d
+                   ON d.id = s.database_id
+         WHERE s.database_id IS NULL
+            OR d.name = '{dbname}'
+        ORDER BY s.database_id, 1
+        """
 
-    tables_query = """
-        SELECT  n.nspname schema_name,
-                c.relname table_name
-        FROM    pg_catalog.pg_class c
-                LEFT JOIN pg_catalog.pg_namespace n
-                    ON n.oid = c.relnamespace
-        WHERE   c.relkind = ANY(%s)
-        ORDER BY 1,2;"""
+    tables_query = """\
+        SELECT s.name schema_name,
+               r.name table_name
+        FROM   mz_relations r
+        JOIN   mz_schemas s
+                   ON s.id = r.schema_id
+               LEFT JOIN  mz_databases d
+                   ON d.id = s.database_id
+         WHERE s.database_id IS NULL
+            OR d.name = '{dbname}'
+           AND r.type = ANY(%s)
+         """
 
     databases_query = """
         SELECT d.datname
@@ -577,8 +586,9 @@ class PGExecute:
         """Returns a list of schema names in the database"""
 
         with self.conn.cursor() as cur:
-            _logger.debug("Schemata Query. sql: %r", self.schemata_query)
-            cur.execute(self.schemata_query)
+            schemata_query = self.schemata_query.format(dbname=self.dbname)
+            _logger.debug("Schemata Query. sql: %r", schemata_query)
+            cur.execute(schemata_query)
             return [x[0] for x in cur.fetchall()]
 
     def _relations(self, kinds=("r", "p", "f", "v", "m", "s")):
@@ -593,25 +603,23 @@ class PGExecute:
                 'm' - materialized view
         :return: (schema_name, rel_name) tuples
         """
+        typemap = dict(
+            r="table",
+            v="view",
+            s="source",
+            m="view",
+            # these don't exist in materialized
+            p="partitioned",
+            f="foreign",
+        )
+        kinds = [typemap[k] for k in kinds]
 
         with self.conn.cursor() as cur:
-            sql = cur.mogrify(self.tables_query, [kinds])
+            query = self.tables_query.format(dbname=self.dbname)
+            sql = cur.mogrify(query, [kinds])
             _logger.debug("Tables Query. sql: %r", sql)
             cur.execute(sql)
             yield from cur
-
-            if "s" in kinds:
-                for schema in self.schemata():
-                    try:
-                        query = "SHOW SOURCES FROM {}".format(schema)
-                    except Exception as e:
-                        _logger.error("unable to execute %s", query)
-                        continue
-
-                    _logger.debug("Sources Query. sql: %r", sql)
-                    cur.execute(query)
-                    for row in cur:
-                        yield (schema, row[0])
 
     def sources(self):
         """Yields (schema_name, source_name) tuples"""

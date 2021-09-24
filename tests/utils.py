@@ -62,7 +62,7 @@ requires_jsonb = pytest.mark.skipif(
 def create_db(dbname):
     with db_connection().cursor() as cur:
         try:
-            cur.execute("""CREATE DATABASE _test_db""")
+            cur.execute(f"""CREATE DATABASE {dbname}""")
         except:
             pass
 

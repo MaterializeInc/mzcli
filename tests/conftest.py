@@ -12,6 +12,9 @@ from utils import (
 import mzcli.pgexecute
 
 
+EXTRA_DB = "_extra_test_db"
+
+
 @pytest.fixture(scope="function")
 def connection():
     create_db("_test_db")
@@ -32,6 +35,28 @@ def cursor(connection):
 def executor(connection):
     return mzcli.pgexecute.PGExecute(
         database="_test_db",
+        user=POSTGRES_USER,
+        host=POSTGRES_HOST,
+        password=POSTGRES_PASSWORD,
+        port=POSTGRES_PORT,
+        dsn=None,
+    )
+
+
+@pytest.fixture(scope="function")
+def extra_connection():
+    create_db(EXTRA_DB)
+    connection = db_connection(EXTRA_DB)
+    yield connection
+
+    drop_tables(connection)
+    connection.close()
+
+
+@pytest.fixture
+def extra_executor(extra_connection):
+    return mzcli.pgexecute.PGExecute(
+        database=EXTRA_DB,
         user=POSTGRES_USER,
         host=POSTGRES_HOST,
         password=POSTGRES_PASSWORD,
