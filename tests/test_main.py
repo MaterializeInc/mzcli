@@ -315,7 +315,7 @@ def test_watch_works(executor):
         :param expected_timing: value `time.sleep` expected to be called with on every invocation
         """
         with mock.patch.object(cli, "echo_via_pager") as mock_echo, mock.patch(
-            "pgcli.main.sleep"
+            "mzcli.main.sleep"
         ) as mock_sleep:
             mock_sleep.side_effect = [None] * (target_call_count - 1) + [
                 KeyboardInterrupt
@@ -330,7 +330,7 @@ def test_watch_works(executor):
             assert expected_output in mock_echo.call_args_list[i][0][0]
 
     # With no history, it errors.
-    with mock.patch("pgcli.main.click.secho") as mock_secho:
+    with mock.patch("mzcli.main.click.secho") as mock_secho:
         cli.handle_watch_command(r"\watch 2")
     mock_secho.assert_called()
     assert (
