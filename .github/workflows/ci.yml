@@ -39,12 +39,12 @@ jobs:
         # transaction, which mz does not support
         run: coverage run --source mzcli -m py.test
 
-      # - name: Run integration tests
-      #   env:
-      #       MZUSER: materialize
-      #       MZPASSWORD: materialize
+      - name: Run integration tests
+        env:
+            MZUSER: materialize
+            MZPASSWORD: materialize
 
-      #   run: behave tests/features --no-capture
+        run: behave tests/features --no-capture
 
       - name: Coverage
         run: |
