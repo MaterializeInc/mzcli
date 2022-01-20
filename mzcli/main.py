@@ -86,6 +86,7 @@ from textwrap import dedent
 
 # Ref: https://stackoverflow.com/questions/30425105/filter-special-chars-such-as-color-codes-from-shell-output
 COLOR_CODE_REGEX = re.compile(r"\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))")
+DEFAULT_MAX_FIELD_WIDTH = 500
 
 # Query tuples are used for maintaining history
 MetaQuery = namedtuple(
@@ -106,7 +107,7 @@ MetaQuery.__new__.__defaults__ = ("", False, 0, 0, False, False, False, False)
 
 OutputSettings = namedtuple(
     "OutputSettings",
-    "table_format dcmlfmt floatfmt missingval expanded max_width case_function style_output",
+    "table_format dcmlfmt floatfmt missingval expanded max_width case_function style_output max_field_width",
 )
 OutputSettings.__new__.__defaults__ = (
     None,
@@ -117,6 +118,7 @@ OutputSettings.__new__.__defaults__ = (
     None,
     lambda x: x,
     None,
+    DEFAULT_MAX_FIELD_WIDTH,
 )
 
 
@@ -200,6 +202,16 @@ class PGCli:
             self.row_limit = row_limit
         else:
             self.row_limit = c["main"].as_int("row_limit")
+
+        # if not specified, set to DEFAULT_MAX_FIELD_WIDTH
+        # if specified but empty, set to None to disable truncation
+        # ellipsis will take at least 3 symbols, so this can't be less than 3 if specified and > 0
+        max_field_width = c["main"].get("max_field_width", DEFAULT_MAX_FIELD_WIDTH)
+        if max_field_width and max_field_width.lower() != "none":
+            max_field_width = max(3, abs(int(max_field_width)))
+        else:
+            max_field_width = None
+        self.max_field_width = max_field_width
 
         self.min_num_menu_lines = c["main"].as_int("min_num_menu_lines")
         self.multiline_continuation_char = c["main"]["multiline_continuation_char"]
@@ -542,6 +554,17 @@ class PGCli:
             - uninstall keyring: pip uninstall keyring
             - disable keyring in our configuration: add keyring = False to [main]"""
         )
+
+        # Prompt for a password immediately if requested via the -W flag. This
+        # avoids wasting time trying to connect to the database and catching a
+        # no-password exception.
+        # If we successfully parsed a password from a URI, there's no need to
+        # prompt for it, even with the -W flag
+        if self.force_passwd_prompt and not passwd:
+            passwd = click.prompt(
+                "Password for %s" % user, hide_input=True, show_default=False, type=str
+            )
+
         if not passwd and keyring:
 
             try:
@@ -554,16 +577,6 @@ class PGCli:
                     err=True,
                     fg="red",
                 )
-
-        # Prompt for a password immediately if requested via the -W flag. This
-        # avoids wasting time trying to connect to the database and catching a
-        # no-password exception.
-        # If we successfully parsed a password from a URI, there's no need to
-        # prompt for it, even with the -W flag
-        if self.force_passwd_prompt and not passwd:
-            passwd = click.prompt(
-                "Password for %s" % user, hide_input=True, show_default=False, type=str
-            )
 
         def should_ask_for_password(exc):
             # Prompt for a password after 1st attempt to connect
@@ -765,18 +778,7 @@ class PGCli:
                     click.secho(str(e), err=True, fg="red")
                     continue
 
-                # Initialize default metaquery in case execution fails
-                self.watch_command, timing = special.get_watch_command(text)
-                if self.watch_command:
-                    while self.watch_command:
-                        try:
-                            query = self.execute_command(self.watch_command)
-                            click.echo(f"Waiting for {timing} seconds before repeating")
-                            sleep(timing)
-                        except KeyboardInterrupt:
-                            self.watch_command = None
-                else:
-                    query = self.execute_command(text)
+                self.handle_watch_command(text)
 
                 self.now = dt.datetime.today()
 
@@ -784,11 +786,39 @@ class PGCli:
                 with self._completer_lock:
                     self.completer.extend_query_history(text)
 
-                self.query_history.append(query)
-
         except (PgCliQuitError, EOFError):
             if not self.less_chatty:
                 print("Goodbye!")
+
+    def handle_watch_command(self, text):
+        # Initialize default metaquery in case execution fails
+        self.watch_command, timing = special.get_watch_command(text)
+
+        # If we run \watch without a command, apply it to the last query run.
+        if self.watch_command is not None and not self.watch_command.strip():
+            try:
+                self.watch_command = self.query_history[-1].query
+            except IndexError:
+                click.secho(
+                    "\\watch cannot be used with an empty query", err=True, fg="red"
+                )
+                self.watch_command = None
+
+        # If there's a command to \watch, run it in a loop.
+        if self.watch_command:
+            while self.watch_command:
+                try:
+                    query = self.execute_command(self.watch_command)
+                    click.echo(f"Waiting for {timing} seconds before repeating")
+                    sleep(timing)
+                except KeyboardInterrupt:
+                    self.watch_command = None
+
+        # Otherwise, execute it as a regular command.
+        else:
+            query = self.execute_command(text)
+
+        self.query_history.append(query)
 
     def _build_cli(self, history):
         key_bindings = pgcli_bindings(self)
@@ -950,6 +980,7 @@ class PGCli:
                     else lambda x: x
                 ),
                 style_output=self.style_output,
+                max_field_width=self.max_field_width,
             )
             execution = time() - start
             formatted = format_output(title, cur, headers, status, settings)
@@ -1462,6 +1493,7 @@ def format_output(title, cur, headers, status, settings):
         "disable_numparse": True,
         "preserve_whitespace": True,
         "style": settings.style_output,
+        "max_field_width": settings.max_field_width,
     }
     if not settings.floatfmt:
         output_kwargs["preprocessors"] = (align_decimals,)
