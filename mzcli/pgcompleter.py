@@ -664,6 +664,13 @@ class PGCompleter(Completer):
             ltbl, lcols = [(t, cs) for (t, cs) in tbls() if t.ref == lref][-1]
         except IndexError:  # The user typed an incorrect table qualifier
             return []
+        except AttributeError as e:
+            _logger.warn(
+                "surprisingly the suggestion %s is the wrong type: %s. This is a bug, please report it.",
+                suggestion,
+                e,
+            )
+            return []
         conds, found_conds = [], set()
 
         def add_cond(lcol, rcol, rref, prio, meta):
